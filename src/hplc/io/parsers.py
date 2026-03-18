@@ -22,8 +22,21 @@ import struct
 import numpy as np
 import re
 
-from hplc.core.chromatogram import Chromatogram
-from hplc.core.signal import Signal2D
+from HPLC.models.chromatogram import Chromatogram
+from HPLC.models.signal import Signal2D
+
+
+def is_ezchrom_file(filepath: str) -> bool:
+    """Check whether a file is an EZChrom Elite .dat OLE2 file."""
+    try:
+        if not olefile.isOleFile(filepath):
+            return False
+        ole = olefile.OleFileIO(filepath)
+        has_header = ole.exists("Chrom Header")
+        ole.close()
+        return has_header
+    except Exception:
+        return False
 
 
 def parse_ezchrom(filepath: str) -> Chromatogram:
@@ -46,16 +59,21 @@ def parse_ezchrom(filepath: str) -> Chromatogram:
     traces.sort(key=lambda t: t["detector_id"])
     ole.close()
 
+    # Replace [N] suffixes on UV detector names with wavelength info
+    uv_traces = [t for t in traces if re.search(r'\[\d+\]$', t["name"])]
+    if wavelengths and len(wavelengths) == len(uv_traces):
+        for trace, wl in zip(uv_traces, wavelengths):
+            trace["name"] = re.sub(r'\s*\[\d+\]$', f': {wl} nm', trace["name"])
+
     signals = {
         trace["name"]: Signal2D(
             time=trace["time"],
             signal=trace["raw"].astype(float) * trace["scale_factor"],
             detector_name=trace["name"],
             time_unit=trace["time_unit"],
-            measurement_unit=trace["unit"],
-            metadata={
+            signal_unit=trace["unit"],
+            additional_data={
                 "detector_id": trace["detector_id"],
-                
                 "scale_factor": trace["scale_factor"],
                 "sampling_rate_hz": trace["sampling_rate_hz"],
             },
@@ -63,7 +81,8 @@ def parse_ezchrom(filepath: str) -> Chromatogram:
         for trace in traces
     }
 
-    metadata = {
+    from pathlib import Path
+    additional_data = {
         "filepath": filepath,
         "sample_name": header["sample_name"],
         "method_path": header["method_path"],
@@ -73,7 +92,11 @@ def parse_ezchrom(filepath: str) -> Chromatogram:
         "wavelengths": wavelengths,
     }
 
-    return Chromatogram(signals=signals, metadata=metadata)
+    return Chromatogram(
+        signals=signals,
+        filename=Path(filepath).name,
+        additional_data=additional_data,
+    )
 
 
 # ── Internal parsers ───────────────────────────────────────────────────────
@@ -243,7 +266,7 @@ def _parse_trace(raw, det_id, detector_info):
     )
 
     rate = 10.0  # Hz
-    time = np.linspace(0, n_points / (rate * 60), n_points)
+    time = np.linspace(0, n_points / rate, n_points)
 
     return {
         "detector_id": det_id,
@@ -253,5 +276,5 @@ def _parse_trace(raw, det_id, detector_info):
         "sampling_rate_hz": rate,
         "time": time,
         "raw": values,
-        "time_unit": "mins",
+        "time_unit": "s",
     }
