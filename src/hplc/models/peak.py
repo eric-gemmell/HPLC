@@ -31,6 +31,10 @@ class Peak2D(Peak):
         end_time: float,
         max_height: float,
         unit: str,
+        mu: float | None = None,
+        amplitude: float | None = None,
+        sigma: float | None = None,
+        alpha: float | None = None,
         compound: str | None = None,
     ) -> None:
         super().__init__(
@@ -42,3 +46,17 @@ class Peak2D(Peak):
             compound=compound,
         )
         self.max_height = max_height
+        self.mu = mu
+        self.amplitude = amplitude
+        self.sigma = sigma
+        self.alpha = alpha
+
+    def __repr__(self) -> str:
+        return (
+            f"Peak2D(retention_time={self.retention_time}, "
+            f"max_height={self.max_height}, "
+            f"area={self.area}, "
+            f"start_time={self.start_time}, "
+            f"end_time={self.end_time}, "
+            f"unit='{self.unit}')"
+        )

@@ -19,11 +19,16 @@ class Chromatogram:
         self.signals: dict[str, Signal] = signals
         self.filename: str = filename
         self.additional_data: dict = additional_data or {}
-        self.peaks: list = []
 
 
     def _copy(self) -> Chromatogram:
         return copy.deepcopy(self)
+
+    def detect_peaks(self) -> Chromatogram:
+        result = self._copy()
+        for name, sig in result.signals.items():
+            result.signals[name] = sig.detect_peaks()
+        return result
 
     def display(
         self,

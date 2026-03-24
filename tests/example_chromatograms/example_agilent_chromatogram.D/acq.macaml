@@ -1,0 +1,573 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ACAML xmlns="urn:schemas-agilent-com:acaml15" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<Checksum Algorithm="MD5">
+		<Value>twTMRsPimRUiLD9I7g9NfQ==</Value>
+	</Checksum>
+	<Doc ContentVersioned="false">
+		<DocID>e917324d-8f56-4d51-a91a-abb084cf4017</DocID>
+		<DocInfo>
+			<Description>Method ACAML</Description>
+			<CreatedByUser>Chemstation_01\Admin</CreatedByUser>
+			<CreatedByApplication>
+				<AgilentApp>
+					<Name>ChemStation</Name>
+					<Version>2.169.0.0</Version>
+				</AgilentApp>
+			</CreatedByApplication>
+			<CreationDate>2026-03-20T13:44:56.948+01:00</CreationDate>
+			<ClientName>CHEMSTATION_01</ClientName>
+		</DocInfo>
+		<Content>
+			<MethodConfiguration xsi:type="MethodConfigurationType" id="39f5ec24-6794-4512-97c9-6cbf9a942058" ver="0">
+				<MethodDescription>
+					<Name>Method Configuration</Name>
+					<ID>Method_Configuration</ID>
+					<Section>
+						<Name>Acquisition Method</Name>
+						<ID>Acquisition_Method</ID>
+						<Section>
+							<Name>DAD</Name>
+							<ID>G7151A</ID>
+							<Section>
+								<Name>Analog Output 1</Name>
+								<ID>AnalogOutput1</ID>
+								<Parameter>
+									<Name>Analog 1 Zero Offset</Name>
+									<ID>AnalogOutput1_AnalogZero</ID>
+									<Unit>%</Unit>
+									<Value>5</Value>
+								</Parameter>
+								<Parameter>
+									<Name>Analog 1 Attenuation</Name>
+									<ID>AnalogOutput1_AnalogAtt</ID>
+									<Unit>mAU</Unit>
+									<Value>1000</Value>
+								</Parameter>
+							</Section>
+							<Section>
+								<Name>Signals</Name>
+								<ID>Signals</ID>
+								<Table>
+									<Name>Signal table</Name>
+									<ID>Signals_Signal</ID>
+									<Row>
+										<Parameter>
+											<Name>Use Sig.</Name>
+											<ID>Signals_Signal_UseSignal</ID>
+											<Unit />
+											<Value>Yes</Value>
+										</Parameter>
+										<Parameter>
+											<Name>Signal</Name>
+											<ID>Signals_Signal_ID</ID>
+											<Unit />
+											<Value>Signal A</Value>
+										</Parameter>
+										<Parameter>
+											<Name>Wavelength</Name>
+											<ID>Signals_Signal_Wavelength</ID>
+											<Unit>nm</Unit>
+											<Value>254.0</Value>
+										</Parameter>
+										<Parameter>
+											<Name>Bandwidth</Name>
+											<ID>Signals_Signal_Bandwidth</ID>
+											<Unit>nm</Unit>
+											<Value>4.0</Value>
+										</Parameter>
+										<Parameter>
+											<Name>Use Ref.</Name>
+											<ID>Signals_Signal_UseReference</ID>
+											<Unit />
+											<Value>No</Value>
+										</Parameter>
+									</Row>
+									<Row>
+										<Parameter>
+											<Name>Use Sig.</Name>
+											<ID>Signals_Signal_UseSignal</ID>
+											<Unit />
+											<Value>Yes</Value>
+										</Parameter>
+										<Parameter>
+											<Name>Signal</Name>
+											<ID>Signals_Signal_ID</ID>
+											<Unit />
+											<Value>Signal B</Value>
+										</Parameter>
+										<Parameter>
+											<Name>Wavelength</Name>
+											<ID>Signals_Signal_Wavelength</ID>
+											<Unit>nm</Unit>
+											<Value>300.0</Value>
+										</Parameter>
+										<Parameter>
+											<Name>Bandwidth</Name>
+											<ID>Signals_Signal_Bandwidth</ID>
+											<Unit>nm</Unit>
+											<Value>4.0</Value>
+										</Parameter>
+										<Parameter>
+											<Name>Use Ref.</Name>
+											<ID>Signals_Signal_UseReference</ID>
+											<Unit />
+											<Value>No</Value>
+										</Parameter>
+									</Row>
+									<Row>
+										<Parameter>
+											<Name>Use Sig.</Name>
+											<ID>Signals_Signal_UseSignal</ID>
+											<Unit />
+											<Value>Yes</Value>
+										</Parameter>
+										<Parameter>
+											<Name>Signal</Name>
+											<ID>Signals_Signal_ID</ID>
+											<Unit />
+											<Value>Signal C</Value>
+										</Parameter>
+										<Parameter>
+											<Name>Wavelength</Name>
+											<ID>Signals_Signal_Wavelength</ID>
+											<Unit>nm</Unit>
+											<Value>405.0</Value>
+										</Parameter>
+										<Parameter>
+											<Name>Bandwidth</Name>
+											<ID>Signals_Signal_Bandwidth</ID>
+											<Unit>nm</Unit>
+											<Value>4.0</Value>
+										</Parameter>
+										<Parameter>
+											<Name>Use Ref.</Name>
+											<ID>Signals_Signal_UseReference</ID>
+											<Unit />
+											<Value>No</Value>
+										</Parameter>
+									</Row>
+									<Row>
+										<Parameter>
+											<Name>Use Sig.</Name>
+											<ID>Signals_Signal_UseSignal</ID>
+											<Unit />
+											<Value>No</Value>
+										</Parameter>
+										<Parameter>
+											<Name>Signal</Name>
+											<ID>Signals_Signal_ID</ID>
+											<Unit />
+											<Value>Signal D</Value>
+										</Parameter>
+									</Row>
+									<Row>
+										<Parameter>
+											<Name>Use Sig.</Name>
+											<ID>Signals_Signal_UseSignal</ID>
+											<Unit />
+											<Value>No</Value>
+										</Parameter>
+										<Parameter>
+											<Name>Signal</Name>
+											<ID>Signals_Signal_ID</ID>
+											<Unit />
+											<Value>Signal E</Value>
+										</Parameter>
+									</Row>
+									<Row>
+										<Parameter>
+											<Name>Use Sig.</Name>
+											<ID>Signals_Signal_UseSignal</ID>
+											<Unit />
+											<Value>No</Value>
+										</Parameter>
+										<Parameter>
+											<Name>Signal</Name>
+											<ID>Signals_Signal_ID</ID>
+											<Unit />
+											<Value>Signal F</Value>
+										</Parameter>
+									</Row>
+									<Row>
+										<Parameter>
+											<Name>Use Sig.</Name>
+											<ID>Signals_Signal_UseSignal</ID>
+											<Unit />
+											<Value>No</Value>
+										</Parameter>
+										<Parameter>
+											<Name>Signal</Name>
+											<ID>Signals_Signal_ID</ID>
+											<Unit />
+											<Value>Signal G</Value>
+										</Parameter>
+									</Row>
+									<Row>
+										<Parameter>
+											<Name>Use Sig.</Name>
+											<ID>Signals_Signal_UseSignal</ID>
+											<Unit />
+											<Value>No</Value>
+										</Parameter>
+										<Parameter>
+											<Name>Signal</Name>
+											<ID>Signals_Signal_ID</ID>
+											<Unit />
+											<Value>Signal H</Value>
+										</Parameter>
+									</Row>
+								</Table>
+							</Section>
+							<Section>
+								<Name>Prepare Mode</Name>
+								<ID>PrepareMode</ID>
+								<Parameter>
+									<Name>Margin for negative Absorbance</Name>
+									<ID>PrepareMode_Headroom</ID>
+									<Unit>mAU</Unit>
+									<Value>100</Value>
+								</Parameter>
+							</Section>
+							<Section>
+								<Name>Autobalance</Name>
+								<ID>PrepareAutomation</ID>
+								<Parameter>
+									<Name>Autobalance Postrun</Name>
+									<ID>PrepareAutomation_DoPostRunBalance</ID>
+									<Unit />
+									<Value>No</Value>
+								</Parameter>
+								<Parameter>
+									<Name>Autobalance Prerun</Name>
+									<ID>PrepareAutomation_DoPrepRunBalance</ID>
+									<Unit />
+									<Value>Yes</Value>
+								</Parameter>
+							</Section>
+							<Section>
+								<Name>Spectrum</Name>
+								<ID>SpectraAcquisition</ID>
+								<Parameter>
+									<Name>Spectrum Store</Name>
+									<ID>SpectraAcquisition_SpectraAcqMode</ID>
+									<Unit />
+									<Value>None</Value>
+								</Parameter>
+							</Section>
+							<Section>
+								<Name>Stoptime</Name>
+								<ID>StopTime</ID>
+								<Parameter>
+									<Name>Stoptime Mode</Name>
+									<ID>StopTime_StopTimeMode</ID>
+									<Unit />
+									<Value>As CE</Value>
+								</Parameter>
+							</Section>
+							<Section>
+								<Name>Posttime</Name>
+								<ID>PostTime</ID>
+								<Parameter>
+									<Name>Posttime Mode</Name>
+									<ID>PostTime_PostTimeMode</ID>
+									<Unit />
+									<Value>Off</Value>
+								</Parameter>
+							</Section>
+							<Section>
+								<Name>Timetable</Name>
+								<ID>Timetable</ID>
+								<Table>
+									<Name>Timetable</Name>
+									<ID>Timetable_TimetableEntry</ID>
+								</Table>
+							</Section>
+							<Parameter>
+								<Name>Peakwidth</Name>
+								<ID>Peakwidth</ID>
+								<Unit />
+								<Value>&gt;0.10 min  (2.0 s response time) (2.5 Hz)</Value>
+							</Parameter>
+							<Parameter>
+								<Name>UV Lamp Required</Name>
+								<ID>UVLampRequired</ID>
+								<Unit />
+								<Value>Yes</Value>
+							</Parameter>
+						</Section>
+						<Section>
+							<Name>CE</Name>
+							<ID>G7150A</ID>
+							<Section>
+								<Name>Cassette Temperature</Name>
+								<ID>CassetteTemperature</ID>
+								<Parameter>
+									<Name>Cassette Temperature Mode</Name>
+									<ID>CassetteTemperature_CassetteTemperatureMode</ID>
+									<Unit />
+									<Value>Temperature set</Value>
+								</Parameter>
+								<Parameter>
+									<Name>Temperature</Name>
+									<ID>CassetteTemperature_TemperatureValue</ID>
+									<Unit>°C</Unit>
+									<Value>5.0</Value>
+								</Parameter>
+							</Section>
+							<Section>
+								<Name>Pressure</Name>
+								<ID>Pressure</ID>
+								<Parameter>
+									<Name>Pressure Mode</Name>
+									<ID>Pressure_PressureMode</ID>
+									<Unit />
+									<Value>Off</Value>
+								</Parameter>
+								<Parameter>
+									<Name>Pressure</Name>
+									<ID>Pressure_PressureValueExternal_DisplayValue</ID>
+									<Unit />
+									<Value>2</Value>
+								</Parameter>
+							</Section>
+							<Section>
+								<Name>Inlet Vial</Name>
+								<ID>InletVial</ID>
+								<Parameter>
+									<Name>Inlet Vial</Name>
+									<ID>InletVial_Vialnumber</ID>
+									<Unit />
+									<Value>9</Value>
+								</Parameter>
+							</Section>
+							<Section>
+								<Name>Outlet Vial</Name>
+								<ID>OutletVial</ID>
+								<Parameter>
+									<Name>Outlet Vial</Name>
+									<ID>OutletVial_Vialnumber</ID>
+									<Unit />
+									<Value>10</Value>
+								</Parameter>
+							</Section>
+							<Section>
+								<Name>Power</Name>
+								<ID>Power</ID>
+								<Parameter>
+									<Name>Power</Name>
+									<ID>Power_PowerValue</ID>
+									<Unit>W</Unit>
+									<Value>6.0</Value>
+								</Parameter>
+							</Section>
+							<Section>
+								<Name>Voltage</Name>
+								<ID>Voltage</ID>
+								<Parameter>
+									<Name>Voltage</Name>
+									<ID>Voltage_VoltageValue</ID>
+									<Unit>KV</Unit>
+									<Value>30.0</Value>
+								</Parameter>
+							</Section>
+							<Section>
+								<Name>Current</Name>
+								<ID>Current</ID>
+								<Parameter>
+									<Name>Current</Name>
+									<ID>Current_CurrentValue</ID>
+									<Unit>µA</Unit>
+									<Value>300</Value>
+								</Parameter>
+							</Section>
+							<Section>
+								<Name>Current Lower Limit Alarm</Name>
+								<ID>CurrentLowerLimitAlarm</ID>
+								<Parameter>
+									<Name>Current Lower Limit Alarm Mode</Name>
+									<ID>CurrentLowerLimitAlarm_CurrentLowerLimitAlarmMode</ID>
+									<Unit />
+									<Value>Off</Value>
+								</Parameter>
+							</Section>
+							<Section>
+								<Name>Replenish Program</Name>
+								<ID>ReplenishProgram</ID>
+								<Table>
+									<Name>Replenish Program Instructions</Name>
+									<ID>ReplenishProgram_ProgramInstructions</ID>
+								</Table>
+							</Section>
+							<Section>
+								<Name>Preconditioning Program</Name>
+								<ID>PreconditioningProgram</ID>
+								<Table>
+									<Name>Preconditioning Program Instructions</Name>
+									<ID>PreconditioningProgram_ProgramInstructions</ID>
+									<Row>
+										<Parameter>
+											<Name>Function</Name>
+											<ID>PreconditioningProgram_ProgramInstructions_Function</ID>
+											<Unit />
+											<Value>Flush</Value>
+										</Parameter>
+										<Parameter>
+											<Name>Parameter</Name>
+											<ID>PreconditioningProgram_ProgramInstructions_Parameter</ID>
+											<Unit />
+											<Value>120s (Inlet: 1 Outlet: 3)</Value>
+										</Parameter>
+									</Row>
+									<Row>
+										<Parameter>
+											<Name>Function</Name>
+											<ID>PreconditioningProgram_ProgramInstructions_Function</ID>
+											<Unit />
+											<Value>Flush</Value>
+										</Parameter>
+										<Parameter>
+											<Name>Parameter</Name>
+											<ID>PreconditioningProgram_ProgramInstructions_Parameter</ID>
+											<Unit />
+											<Value>120s (Inlet: 2 Outlet: 3)</Value>
+										</Parameter>
+									</Row>
+									<Row>
+										<Parameter>
+											<Name>Function</Name>
+											<ID>PreconditioningProgram_ProgramInstructions_Function</ID>
+											<Unit />
+											<Value>Flush</Value>
+										</Parameter>
+										<Parameter>
+											<Name>Parameter</Name>
+											<ID>PreconditioningProgram_ProgramInstructions_Parameter</ID>
+											<Unit />
+											<Value>180s (Inlet: 6 Outlet: 3)</Value>
+										</Parameter>
+									</Row>
+								</Table>
+							</Section>
+							<Section>
+								<Name>Injection Program</Name>
+								<ID>InjectionProgram</ID>
+								<Table>
+									<Name>Injection Program Instructions</Name>
+									<ID>InjectionProgram_ProgramInstructions</ID>
+									<Row>
+										<Parameter>
+											<Name>Function</Name>
+											<ID>InjectionProgram_ProgramInstructions_Function</ID>
+											<Unit />
+											<Value>Apply Pressure</Value>
+										</Parameter>
+										<Parameter>
+											<Name>Parameter</Name>
+											<ID>InjectionProgram_ProgramInstructions_Parameter</ID>
+											<Unit />
+											<Value>50mbar for 5s (Inlet: Injection Vial Outlet: 3)</Value>
+										</Parameter>
+									</Row>
+								</Table>
+							</Section>
+							<Section>
+								<Name>Postconditioning Program</Name>
+								<ID>PostconditioningProgram</ID>
+								<Table>
+									<Name>Postconditioning Program Instructions</Name>
+									<ID>PostconditioningProgram_ProgramInstructions</ID>
+								</Table>
+							</Section>
+							<Section>
+								<Name>Stop Time</Name>
+								<ID>StopTime</ID>
+								<Parameter>
+									<Name>Stoptime Mode</Name>
+									<ID>StopTime_StopTimeMode</ID>
+									<Unit />
+									<Value>Time set</Value>
+								</Parameter>
+								<Parameter>
+									<Name>Stoptime</Name>
+									<ID>StopTime_StopTimeValue</ID>
+									<Unit>min</Unit>
+									<Value>25.00</Value>
+								</Parameter>
+							</Section>
+							<Section>
+								<Name>Post Time</Name>
+								<ID>PostTime</ID>
+								<Parameter>
+									<Name>Posttime Mode</Name>
+									<ID>PostTime_PostTimeMode</ID>
+									<Unit />
+									<Value>Off</Value>
+								</Parameter>
+							</Section>
+							<Section>
+								<Name>Timetable</Name>
+								<ID>Timetable</ID>
+								<Table>
+									<Name>Timetable</Name>
+									<ID>Timetable_TimetableEntry</ID>
+									<Row>
+										<Parameter>
+											<Name>Time</Name>
+											<ID>Timetable_TimetableEntry_Time</ID>
+											<Unit>min</Unit>
+											<Value>0.00</Value>
+										</Parameter>
+										<Parameter>
+											<Name>Function</Name>
+											<ID>Timetable_TimetableEntry_Function</ID>
+											<Unit />
+											<Value>Change InletVial</Value>
+										</Parameter>
+										<Parameter>
+											<Name>Parameter</Name>
+											<ID>Timetable_TimetableEntry_Parameter</ID>
+											<Unit />
+											<Value>InletVial: 7 </Value>
+										</Parameter>
+									</Row>
+									<Row>
+										<Parameter>
+											<Name>Time</Name>
+											<ID>Timetable_TimetableEntry_Time</ID>
+											<Unit>min</Unit>
+											<Value>0.00</Value>
+										</Parameter>
+										<Parameter>
+											<Name>Function</Name>
+											<ID>Timetable_TimetableEntry_Function</ID>
+											<Unit />
+											<Value>Change OutletVial</Value>
+										</Parameter>
+										<Parameter>
+											<Name>Parameter</Name>
+											<ID>Timetable_TimetableEntry_Parameter</ID>
+											<Unit />
+											<Value>OutletVial: 8    </Value>
+										</Parameter>
+									</Row>
+								</Table>
+							</Section>
+							<Parameter>
+								<Name>Replenish Execution Mode</Name>
+								<ID>ReplenishExecutionMode</ID>
+								<Unit />
+								<Value>Serial</Value>
+							</Parameter>
+							<Parameter>
+								<Name>UseElectric</Name>
+								<ID>UseElectric</ID>
+								<Unit />
+								<Value>Yes</Value>
+							</Parameter>
+						</Section>
+					</Section>
+				</MethodDescription>
+			</MethodConfiguration>
+		</Content>
+	</Doc>
+</ACAML>
