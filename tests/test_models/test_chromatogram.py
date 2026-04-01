@@ -9,8 +9,8 @@ from HPLC.testing.mock_generators import make_signal2d, make_chromatogram
 
 @pytest.fixture
 def make_signal():
-    def _make(name="UV", signal_unit="mAU"):
-        return Signal2D(name, np.array([1.0, 2.0, 3.0]), "min", np.array([10.0, 20.0, 30.0]), signal_unit)
+    def _make(detector_name="UV", signal_unit="mAU"):
+        return Signal2D(detector_name, np.array([1.0, 2.0, 3.0]), "min", np.array([10.0, 20.0, 30.0]), signal_unit)
     return _make
 
 
@@ -67,3 +67,4 @@ def test_detect_peaks_calls_signal_detect_peaks_once_per_signal(chrom):
     with patch.object(Signal2D, "detect_peaks", return_value=chrom.signals["UV"]) as mock:
         chrom.detect_peaks()
         assert mock.call_count == len(chrom.signals)
+

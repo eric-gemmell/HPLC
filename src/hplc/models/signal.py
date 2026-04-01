@@ -17,6 +17,7 @@ class Signal(ABC):
         time: np.ndarray,
         time_unit: str,
         signal_unit: str,
+        filename: str | None = None,
         additional_data: dict | None = None,
         peaks: list[Peak] | None = None,
 
@@ -35,6 +36,7 @@ class Signal(ABC):
         self.time = np.asarray(time, dtype=float)
         self.time_unit = time_unit
         self.signal_unit = signal_unit
+        self.filename = filename
         self.additional_data = additional_data or {}
         self.peaks: list[Peak] = peaks or []
         self._peaks_detected: bool = bool(peaks)
@@ -64,6 +66,7 @@ class Signal2D(Signal):
         time_unit: str,
         signal: np.ndarray,
         signal_unit: str,
+        filename: str | None = None,
         additional_data: dict | None = None,
         peaks: list[Peak2D] | None = None,
     ) -> None:
@@ -72,6 +75,7 @@ class Signal2D(Signal):
             time=time,
             time_unit=time_unit,
             signal_unit=signal_unit,
+            filename=filename,
             additional_data=additional_data,
             peaks=peaks,
         )
@@ -137,3 +141,7 @@ class Signal2D(Signal):
             dpi=dpi,
         )
         return self
+
+    def stack(self, *others: Signal2D) -> SignalStack2D:
+        from HPLC.models.signal_stack import SignalStack2D  # avoid circular import
+        return SignalStack2D([self, *others])

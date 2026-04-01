@@ -65,6 +65,10 @@ def parse_ezchrom(filepath: str) -> Chromatogram:
         for trace, wl in zip(uv_traces, wavelengths):
             trace["name"] = re.sub(r'\s*\[\d+\]$', f': {wl} nm', trace["name"])
 
+    from pathlib import Path
+    chrom_filename = Path(filepath).name
+    sample_name = header["sample_name"]
+
     signals = {
         trace["name"]: Signal2D(
             time=trace["time"],
@@ -72,16 +76,17 @@ def parse_ezchrom(filepath: str) -> Chromatogram:
             detector_name=trace["name"],
             time_unit=trace["time_unit"],
             signal_unit=trace["unit"],
+            filename=chrom_filename,
             additional_data={
                 "detector_id": trace["detector_id"],
                 "scale_factor": trace["scale_factor"],
                 "sampling_rate_hz": trace["sampling_rate_hz"],
+                "sample_name": sample_name,
             },
         )
         for trace in traces
     }
 
-    from pathlib import Path
     additional_data = {
         "filepath": filepath,
         "sample_name": header["sample_name"],
@@ -94,7 +99,7 @@ def parse_ezchrom(filepath: str) -> Chromatogram:
 
     return Chromatogram(
         signals=signals,
-        filename=Path(filepath).name,
+        filename=chrom_filename,
         additional_data=additional_data,
     )
 

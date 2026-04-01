@@ -12,19 +12,28 @@ from HPLC.analysis.peak_detection import detect_peaks
 
 @pytest.fixture
 def sig():
-    return Signal2D("UV", np.array([1.0, 2.0]), "min", np.array([10.0, 20.0]), "mAU")
+    return Signal2D(
+        filename="test_signal", 
+        detector_name="UV", 
+        time=np.array([1.0, 2.0]), 
+        time_unit="min", 
+        signal=np.array([10.0, 20.0]), 
+        signal_unit="mAU"
+    )
 
 
 def test_construction(sig: Signal2D):
+    assert sig.filename == "test_signal"
     assert sig.detector_name == "UV"
     assert len(sig) == 2
     np.testing.assert_array_equal(sig.signal, [10.0, 20.0])
 
 
 @pytest.mark.parametrize("kwargs, match", [
-    (dict(detector_name="", time=np.array([1.0]), time_unit="s", signal=np.array([1.0]), signal_unit="V"), "Detector name"),
-    (dict(detector_name="UV", time=np.array([]), time_unit="s", signal=np.array([]), signal_unit="V"), "at least one"),
-    (dict(detector_name="UV", time=np.array([1.0, 2.0]), time_unit="s", signal=np.array([1.0]), signal_unit="V"), "same length"),
+    (dict(filename="s", detector_name="", time=np.array([1.0]), time_unit="s", signal=np.array([1.0]), signal_unit="V"), "Detector name"),
+    (dict(filename="s", detector_name="UV", time=np.array([]), time_unit="s", signal=np.array([]), signal_unit="V"), "at least one"),
+    (dict(filename="s", detector_name="UV", time=np.array([1.0, 2.0]), time_unit="s", signal=np.array([1.0]), signal_unit="V"), "same length"),
+    # (dict(filename="", detector_name="UV", time=np.array([1.0]), time_unit="s", signal=np.array([1.0]), signal_unit="V"), "Signal name"),
 ])
 def test_validation(kwargs: dict[str, str | NDArray[Any]], match: Literal['Detector name'] | Literal['at least one'] | Literal['same length']):
     with pytest.raises(ValueError, match=match):
@@ -59,6 +68,7 @@ def test_detect_peaks_calls_detect_peaks_once():
     signal = np.array([0.0, 1.0, 0.0])
 
     sig = Signal2D(
+        filename="test",
         detector_name="UV",
         time=time,
         time_unit="min",
@@ -75,6 +85,7 @@ def test_detect_peaks_assigns_peaks_to_result():
     signal = np.array([0.0, 1.0, 3.0, 1.0, 0.0])
 
     sig = Signal2D(
+        filename="test",
         detector_name="UV",
         time=time,
         time_unit="min",
@@ -113,3 +124,12 @@ def test_detect_peaks_assigns_peaks_to_result():
     assert peak.amplitude == 3.0
     assert peak.sigma == 0.5
     assert peak.alpha == 0.1
+
+
+def test_signal_has_stack_method():
+    sig = make_signal2d([], filename="test_signal", detector_name="UV", duration=20)
+    sig2 = make_signal2d([], filename="test_signal_2", detector_name="UV", duration=20)
+    assert hasattr(sig, "stack")
+    stack = sig.stack(sig2)
+    assert stack.signals[0].filename is sig.filename
+    assert stack.signals[1].filename is sig2.filename

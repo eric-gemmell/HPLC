@@ -82,7 +82,7 @@ def expected_peak_properties(peaks, n_sigma=3.0):
 
 
 def make_signal2d(peaks, detector_name="UV-Detektor S 2600: 254 nm", signal_unit="mAU",
-                  duration=900, dt=1, noise_scale=0.1, seed=42):
+                  duration=900, dt=1, noise_scale=0.1, seed=42, filename=None):
     time, signal = make_raw_signal(peaks, duration=duration, dt=dt, noise_scale=noise_scale, seed=seed)
     return Signal2D(
         detector_name=detector_name,
@@ -90,6 +90,7 @@ def make_signal2d(peaks, detector_name="UV-Detektor S 2600: 254 nm", signal_unit
         time_unit="s",
         signal=signal,
         signal_unit=signal_unit,
+        filename=filename,
     )
 
 

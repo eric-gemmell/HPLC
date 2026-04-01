@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from HPLC.models.chromatogram import Chromatogram
 from HPLC.io.parsers import parse_ezchrom, is_ezchrom_file
+from HPLC.io.agilent_parser import parse_agilent_data_file, is_agilent_chromatogram
 
 _PARSERS = [
+    (is_agilent_chromatogram, parse_agilent_data_file),
     (is_ezchrom_file, parse_ezchrom),
 ]
 
