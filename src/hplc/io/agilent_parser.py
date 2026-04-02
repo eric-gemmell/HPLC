@@ -29,8 +29,8 @@ from pathlib import Path
 
 import numpy as np
 
-from HPLC.models.chromatogram import Chromatogram
-from HPLC.models.signal import Signal2D
+from hplc.models.chromatogram import Chromatogram
+from hplc.models.signal import Signal2D
 
 # ---------------------------------------------------------------------------
 # Constants for version-130 .ch binary layout

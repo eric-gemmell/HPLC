@@ -1,8 +1,8 @@
 import pytest
 import numpy as np
 
-from HPLC.io import parse_agilent_data_file, is_agilent_chromatogram
-from HPLC.models import Chromatogram, Signal2D
+from hplc.io import parse_agilent_data_file, is_agilent_chromatogram
+from hplc.models import Chromatogram, Signal2D
 
 example_agilent_filename = "tests/example_chromatograms/example_agilent_chromatogram.D"
 example_agilent_filename_modified_1 = "tests/example_chromatograms/example_agilent_chromatogram"

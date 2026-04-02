@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import plotly.graph_objects as go
 
-from HPLC.graphing.signal import _skew_normal_curve, _trim_to_area_fraction
+from hplc.graphing.signal import _skew_normal_curve, _trim_to_area_fraction
 
 
 TRACE_PALETTE = [

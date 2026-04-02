@@ -1,5 +1,5 @@
 import pytest
-from HPLC.models import Peak2D
+from hplc.models import Peak2D
 
 def test_peak2d_repr():
     peak = Peak2D(

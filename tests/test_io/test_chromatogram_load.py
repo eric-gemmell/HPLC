@@ -1,6 +1,6 @@
 import pytest
-from HPLC.io import load
-from HPLC.models import Chromatogram
+from hplc.io import load
+from hplc.models import Chromatogram
 
 example_ezchrom_filename = "tests/example_chromatograms/example_ez_chrom_chromatogram.dat"
 example_agilent_filename = "tests/example_chromatograms/example_agilent_chromatogram.D"

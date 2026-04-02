@@ -1,6 +1,6 @@
-from HPLC.analysis.peak_detection import detect_peaks
+from hplc.analysis.peak_detection import detect_peaks
 import pytest
-from HPLC.testing.mock_generators import make_raw_signal, expected_peak_properties
+from hplc.testing.mock_generators import make_raw_signal, expected_peak_properties
 
 CLIPPED_BROAD_PEAKS = [
     {"mu": 800, "amplitude": 800,  "sigma": 120, "alpha": 30.0},

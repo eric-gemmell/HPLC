@@ -1,6 +1,6 @@
-from HPLC.analysis.peak_detection import detect_peaks
+from hplc.analysis.peak_detection import detect_peaks
 import pytest
-from HPLC.testing.mock_generators import make_raw_signal, expected_peak_properties
+from hplc.testing.mock_generators import make_raw_signal, expected_peak_properties
 
 
 def test_detect_peaks_with_ultra_flat_chromatogram_with_no_peaks_finds_no_peaks():

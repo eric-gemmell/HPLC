@@ -3,8 +3,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 import copy
 
-from HPLC.models.signal import Signal, Signal2D
-from HPLC.graphing import plot_signal_2d
+from hplc.models.signal import Signal, Signal2D
+from hplc.graphing import plot_signal_2d
 
 
 class SignalStack(ABC):

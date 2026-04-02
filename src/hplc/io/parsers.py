@@ -22,8 +22,8 @@ import struct
 import numpy as np
 import re
 
-from HPLC.models.chromatogram import Chromatogram
-from HPLC.models.signal import Signal2D
+from hplc.models.chromatogram import Chromatogram
+from hplc.models.signal import Signal2D
 
 
 def is_ezchrom_file(filepath: str) -> bool:

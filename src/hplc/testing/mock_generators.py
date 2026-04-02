@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.special import erf
-from HPLC.models.signal import Signal2D
-from HPLC.models.chromatogram import Chromatogram
+from hplc.models.signal import Signal2D
+from hplc.models.chromatogram import Chromatogram
 
 
 def _skew_normal(time, amplitude, mu, sigma, alpha):

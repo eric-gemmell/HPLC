@@ -5,9 +5,9 @@ import pytest
 import numpy as np
 from unittest.mock import patch
 
-from HPLC.models import Signal2D, Peak2D
-from HPLC.testing.mock_generators import make_raw_signal, make_signal2d, expected_peak_properties
-from HPLC.analysis.peak_detection import detect_peaks
+from hplc.models import Signal2D, Peak2D
+from hplc.testing.mock_generators import make_raw_signal, make_signal2d, expected_peak_properties
+from hplc.analysis.peak_detection import detect_peaks
 
 
 @pytest.fixture
@@ -40,25 +40,25 @@ def test_validation(kwargs: dict[str, str | NDArray[Any]], match: Literal['Detec
         Signal2D(**kwargs)
 
 
-@patch("HPLC.models.signal.plot_signal_2d")
+@patch("hplc.models.signal.plot_signal_2d")
 def test_display(mock_display, sig: Signal2D):
     assert sig.display() is sig
     mock_display.assert_called_once()
 
 
-@patch("HPLC.models.signal.plot_signal_2d")
+@patch("hplc.models.signal.plot_signal_2d")
 def test_display_accepts_optional_parameters(mock_display, sig: Signal2D):
     sig.display(width=800, height=600, filename="out.png", dpi=150, style="bw", title="My Signal", x_lim=(0, 10), y_lim=(0, 100))
     mock_display.assert_called_once()
 
 
-@patch("HPLC.models.signal.plot_signal_2d")
+@patch("hplc.models.signal.plot_signal_2d")
 def test_display_publication(mock_display, sig: Signal2D):
     assert sig.display_publication() is sig
     mock_display.assert_called_once()
 
 
-@patch("HPLC.models.signal.plot_signal_2d")
+@patch("hplc.models.signal.plot_signal_2d")
 def test_display_publication_accepts_optional_parameters(mock_display, sig: Signal2D):
     sig.display_publication(width=800, height=600, filename="out.png", dpi=150, title="My Signal", x_lim=(0, 10), y_lim=(0, 100))
     mock_display.assert_called_once()
@@ -94,7 +94,7 @@ def test_detect_peaks_calls_detect_peaks_once():
         signal_unit="mAU",
     )
 
-    with patch("HPLC.models.signal.detect_peaks", return_value=[]) as mock_fp:
+    with patch("hplc.models.signal.detect_peaks", return_value=[]) as mock_fp:
         sig.detect_peaks()
         mock_fp.assert_called_once()
 
@@ -125,7 +125,7 @@ def test_detect_peaks_assigns_peaks_to_result():
         }
     ]
 
-    with patch("HPLC.models.signal.detect_peaks", return_value=stub_peak_data):
+    with patch("hplc.models.signal.detect_peaks", return_value=stub_peak_data):
         result = sig.detect_peaks()
 
     assert len(result.peaks) == 1

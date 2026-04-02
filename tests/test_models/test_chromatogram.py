@@ -2,9 +2,9 @@ import pytest
 import numpy as np
 from unittest.mock import patch
 
-from HPLC.models.chromatogram import Chromatogram
-from HPLC.models.signal import Signal2D
-from HPLC.testing.mock_generators import make_signal2d, make_chromatogram
+from hplc.models.chromatogram import Chromatogram
+from hplc.models.signal import Signal2D
+from hplc.testing.mock_generators import make_signal2d, make_chromatogram
 
 
 @pytest.fixture
@@ -33,37 +33,37 @@ def test_empty_signals_raises():
         Chromatogram(signals={}, filename="empty.txt")
 
 
-@patch("HPLC.models.chromatogram.plot_chromatogram")
+@patch("hplc.models.chromatogram.plot_chromatogram")
 def test_display_all(mock_plot, chrom):
     assert chrom.display() is chrom
     mock_plot.assert_called_once()
 
 
-@patch("HPLC.models.chromatogram.plot_signal_2d")
+@patch("hplc.models.chromatogram.plot_signal_2d")
 def test_display_single_detector(mock_plot, chrom):
     assert chrom.display(detector_name="UV") is chrom
     mock_plot.assert_called_once()
 
 
-@patch("HPLC.models.chromatogram.plot_chromatogram")
+@patch("hplc.models.chromatogram.plot_chromatogram")
 def test_display_multiple_detectors(mock_plot, chrom):
     assert chrom.display(detector_name=["UV", "FLD"]) is chrom
     mock_plot.assert_called_once()
 
 
-@patch("HPLC.models.chromatogram.plot_chromatogram")
+@patch("hplc.models.chromatogram.plot_chromatogram")
 def test_display_accepts_optional_parameters(mock_plot, chrom):
     chrom.display(width=800, height=600, filename="out.png", dpi=150, style="bw", title="Custom Title", shared_x=True, x_lim=(0, 10), y_lim=(0, 100))
     mock_plot.assert_called_once()
 
 
-@patch("HPLC.models.chromatogram.plot_chromatogram")
+@patch("hplc.models.chromatogram.plot_chromatogram")
 def test_display_publication(mock_plot, chrom):
     assert chrom.display_publication() is chrom
     mock_plot.assert_called_once()
 
 
-@patch("HPLC.models.chromatogram.plot_chromatogram")
+@patch("hplc.models.chromatogram.plot_chromatogram")
 def test_display_publication_accepts_optional_parameters(mock_plot, chrom):
     chrom.display_publication(width=800, height=600, filename="out.png", dpi=150, title="Custom Title", shared_x=True, x_lim=(0, 10), y_lim=(0, 100))
     mock_plot.assert_called_once()

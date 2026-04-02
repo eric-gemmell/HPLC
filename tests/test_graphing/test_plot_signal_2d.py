@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from unittest.mock import patch
 
-from HPLC.graphing import plot_signal_2d
+from hplc.graphing import plot_signal_2d
 
 
 @pytest.fixture(autouse=True)

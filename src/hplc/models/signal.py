@@ -4,9 +4,9 @@ from abc import ABC, abstractmethod
  
 import numpy as np
 import copy
-from HPLC.graphing import plot_signal_2d
-from HPLC.models.peak import Peak, Peak2D
-from HPLC.analysis.peak_detection import detect_peaks
+from hplc.graphing import plot_signal_2d
+from hplc.models.peak import Peak, Peak2D
+from hplc.analysis.peak_detection import detect_peaks
  
 class Signal(ABC):
     """Base class for all signal types."""
@@ -177,5 +177,5 @@ class Signal2D(Signal):
         )
 
     def stack(self, *others: Signal2D) -> SignalStack2D:
-        from HPLC.models.signal_stack import SignalStack2D  # avoid circular import
+        from hplc.models.signal_stack import SignalStack2D  # avoid circular import
         return SignalStack2D([self, *others])

@@ -1,8 +1,8 @@
 from __future__ import annotations
 import copy
 
-from HPLC.models.signal import Signal
-from HPLC.graphing import plot_chromatogram, plot_signal_2d
+from hplc.models.signal import Signal
+from hplc.graphing import plot_chromatogram, plot_signal_2d
 
 class Chromatogram:
 

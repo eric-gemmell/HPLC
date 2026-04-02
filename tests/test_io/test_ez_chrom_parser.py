@@ -1,8 +1,8 @@
 import pytest
 import numpy as np
 
-from HPLC.io import parse_ezchrom, is_ezchrom_file
-from HPLC.models import Chromatogram, Signal2D
+from hplc.io import parse_ezchrom, is_ezchrom_file
+from hplc.models import Chromatogram, Signal2D
 
 example_ezchrom_filename = "tests/example_chromatograms/example_ez_chrom_chromatogram.dat"
 example_shimadzu_filename = "tests/example_chromatograms/example_shimadzu_chromatogram.lcd"

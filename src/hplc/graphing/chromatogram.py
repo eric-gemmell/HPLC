@@ -4,7 +4,7 @@ import math
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from HPLC.graphing.signal import plot_signal_2d, PALETTE
+from hplc.graphing.signal import plot_signal_2d, PALETTE
 
 
 def plot_chromatogram(
