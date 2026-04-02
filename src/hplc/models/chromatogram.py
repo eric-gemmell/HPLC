@@ -33,13 +33,16 @@ class Chromatogram:
     def display(
         self,
         detector_name: str | list[str] | tuple[str, ...] | None = None,
+        width: int = 520,
+        height: int = 340,
         filename: str | None = None,
-        size: tuple[int, int] = (520, 340),
         dpi: int = 300,
+        style: str = "color",
+        title: str | None = None,
         shared_x: bool = False,
+        x_lim: tuple[float | None, float | None] | None = None,
+        y_lim: tuple[float | None, float | None] | None = None,
     ) -> Chromatogram:
-        
-        
         if detector_name is None:
             selected = self.signals
         elif isinstance(detector_name, str):
@@ -47,18 +50,26 @@ class Chromatogram:
         else:
             selected = {name: self.signals[name] for name in detector_name}
 
+        display_title = title if title is not None else self.filename
+
         if len(selected) == 1:
             name, sig = next(iter(selected.items()))
             plot_signal_2d(
-                name=name,
-                time=sig.time,
-                time_unit=sig.time_unit,
-                signal=sig.signal,
-                signal_unit=sig.signal_unit,
-                width=size[0],
-                height=size[1],
+                signals=[{
+                    "name": name,
+                    "time": sig.time,
+                    "time_unit": sig.time_unit,
+                    "signal": sig.signal,
+                    "signal_unit": sig.signal_unit,
+                }],
+                title=display_title,
+                width=width,
+                height=height,
                 filename=filename,
                 dpi=dpi,
+                style=style,
+                x_lim=x_lim,
+                y_lim=y_lim,
             )
         else:
             plot_chromatogram(
@@ -71,12 +82,38 @@ class Chromatogram:
                     )
                     for name, sig in selected.items()
                 },
-                title=self.filename,
-                subplot_width=size[0],
-                subplot_height=size[1],
+                title=display_title,
+                subplot_width=width,
+                subplot_height=height,
                 filename=filename,
                 dpi=dpi,
+                style=style,
                 shared_x=shared_x,
             )
         return self
+
+    def display_publication(
+        self,
+        detector_name: str | list[str] | tuple[str, ...] | None = None,
+        width: int = 520,
+        height: int = 340,
+        filename: str | None = None,
+        dpi: int = 300,
+        title: str | None = None,
+        shared_x: bool = False,
+        x_lim: tuple[float | None, float | None] | None = None,
+        y_lim: tuple[float | None, float | None] | None = None,
+    ) -> Chromatogram:
+        return self.display(
+            detector_name=detector_name,
+            width=width,
+            height=height,
+            filename=filename,
+            dpi=dpi,
+            style="bw",
+            title=title,
+            shared_x=shared_x,
+            x_lim=x_lim,
+            y_lim=y_lim,
+        )
         

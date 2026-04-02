@@ -1,15 +1,10 @@
 from __future__ import annotations
 
 import math
-import numpy as np
-from plotly.subplots import make_subplots
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
-
-PALETTE = [
-    "#4C78A8", "#F58518", "#E45756", "#72B7B2",
-    "#54A24B", "#EECA3B", "#B279A2", "#FF9DA6",
-]
+from HPLC.graphing.signal import plot_signal_2d, PALETTE
 
 
 def plot_chromatogram(
@@ -21,9 +16,12 @@ def plot_chromatogram(
     shared_x: bool = False,
     filename: str | None = None,
     dpi: int = 300,
+    style: str = "color",
 ) -> go.Figure:
     """
     Plot a tiled grid of chromatogram signals.
+
+    Each subplot is rendered by plot_signal_2d.
 
     Parameters
     ----------
@@ -37,20 +35,16 @@ def plot_chromatogram(
         Overall figure title.
     cols : int
         Number of columns in the grid.
-    subplot_width : int
-        Width of each subplot in pixels.
-    subplot_height : int
-        Height of each subplot in pixels.
+    subplot_width, subplot_height : int
+        Dimensions of each subplot in pixels.
     shared_x : bool
-        Whether subplots share x-axes (useful when all signals have the same time axis).
+        Whether subplots share x-axes.
     filename : str | None
-        If provided, save the figure as a PNG at this path.
+        If provided, save the figure as a PNG.
     dpi : int
         Resolution for PNG export.
-
-    Returns
-    -------
-    go.Figure
+    style : str
+        "color" or "bw".
     """
     n = len(signals)
     if n == 0:
@@ -71,38 +65,32 @@ def plot_chromatogram(
     )
 
     for i, (name, data) in enumerate(signals.items()):
-        row = (i // cols) + 1
-        col = (i % cols) + 1
+        r = (i // cols) + 1
+        c = (i % cols) + 1
         color = PALETTE[i % len(PALETTE)]
 
-        time = data["time"]
-        signal = data["signal"]
-        time_unit = data["time_unit"]
-        signal_unit = data["signal_unit"]
+        signal_dict = {
+            "name": name,
+            "time": data["time"],
+            "time_unit": data["time_unit"],
+            "signal": data["signal"],
+            "signal_unit": data["signal_unit"],
+            "color": color,
+        }
 
-        fig.add_trace(
-            go.Scatter(
-                x=time,
-                y=signal,
-                mode="lines",
-                line=dict(color=color, width=1.5),
-                name=name,
-                showlegend=False,
-                hovertemplate=(
-                    f"<b>{name}</b><br>"
-                    f"Time: %{{x:.3f}} {time_unit}<br>"
-                    f"Signal: %{{y:.2f}} {signal_unit}"
-                    "<extra></extra>"
-                ),
-            ),
-            row=row,
-            col=col,
+        plot_signal_2d(
+            signals=[signal_dict],
+            fig=fig,
+            row=r,
+            col=c,
+            style=style,
         )
 
+        # Configure axes for this subplot
         axis_suffix = "" if i == 0 else str(i + 1)
         fig.update_layout(**{
             f"xaxis{axis_suffix}": dict(
-                title=dict(text=f"Time ({time_unit})", font=dict(size=10)),
+                title=dict(text=f"Time ({data['time_unit']})", font=dict(size=10)),
                 showgrid=True,
                 gridcolor="rgba(0,0,0,0.06)",
                 zeroline=False,
@@ -111,7 +99,7 @@ def plot_chromatogram(
                 tickfont=dict(size=9),
             ),
             f"yaxis{axis_suffix}": dict(
-                title=dict(text=f"Signal ({signal_unit})", font=dict(size=10)),
+                title=dict(text=f"Signal ({data['signal_unit']})", font=dict(size=10)),
                 showgrid=True,
                 gridcolor="rgba(0,0,0,0.06)",
                 zeroline=False,
@@ -133,9 +121,9 @@ def plot_chromatogram(
         height=subplot_height * rows,
         margin=dict(l=55, r=20, t=60, b=45),
         hovermode="x unified",
+        showlegend=False,
     )
 
-    # Style the subplot titles
     for annotation in fig.layout.annotations:
         annotation.font = dict(size=11, color="#2c3e50")
 

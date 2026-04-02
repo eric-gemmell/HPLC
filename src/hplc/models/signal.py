@@ -110,13 +110,7 @@ class Signal2D(Signal):
         result._peaks_detected = True
         return result
 
-    def display(
-        self,
-        width: int = 520,
-        height: int = 340,
-        filename: str | None = None,
-        dpi: int = 300,
-    ) -> Signal2D:
+    def _to_signal_dict(self) -> dict:
         peak_dicts = [
             {
                 "mu": p.mu,
@@ -126,21 +120,61 @@ class Signal2D(Signal):
                 "label": p.compound or f"Peak @ {p.retention_time:.1f}s",
             }
             for p in self.peaks
+            if p.mu is not None
         ]
+        return {
+            "name": self.detector_name,
+            "time": self.time,
+            "time_unit": self.time_unit,
+            "signal": self.signal,
+            "signal_unit": self.signal_unit,
+            "peaks": peak_dicts or None,
+        }
 
+    def display(
+        self,
+        width: int = 520,
+        height: int = 340,
+        filename: str | None = None,
+        dpi: int = 300,
+        style: str = "color",
+        title: str | None = None,
+        x_lim: tuple[float | None, float | None] | None = None,
+        y_lim: tuple[float | None, float | None] | None = None,
+    ) -> Signal2D:
         plot_signal_2d(
-            name=self.detector_name,
-            time=self.time,
-            time_unit=self.time_unit,
-            signal=self.signal,
-            signal_unit=self.signal_unit,
-            peaks=peak_dicts if peak_dicts else None,
+            signals=[self._to_signal_dict()],
+            title=title or self.detector_name,
             width=width,
             height=height,
             filename=filename,
             dpi=dpi,
+            style=style,
+            x_lim=x_lim,
+            y_lim=y_lim,
         )
         return self
+
+    def display_publication(
+        self,
+        width: int = 520,
+        height: int = 340,
+        filename: str | None = None,
+        dpi: int = 300,
+        title: str | None = None,
+        x_lim: tuple[float | None, float | None] | None = None,
+        y_lim: tuple[float | None, float | None] | None = None,
+    ) -> Signal2D:
+        return self.display(
+            width=width,
+            height=height,
+            filename=filename,
+            dpi=dpi,
+            style="bw",
+            title=title,
+            x_lim=x_lim,
+            y_lim=y_lim,
+        )
 
     def stack(self, *others: Signal2D) -> SignalStack2D:
         from HPLC.models.signal_stack import SignalStack2D  # avoid circular import

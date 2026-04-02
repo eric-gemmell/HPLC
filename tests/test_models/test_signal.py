@@ -46,6 +46,24 @@ def test_display(mock_display, sig: Signal2D):
     mock_display.assert_called_once()
 
 
+@patch("HPLC.models.signal.plot_signal_2d")
+def test_display_accepts_optional_parameters(mock_display, sig: Signal2D):
+    sig.display(width=800, height=600, filename="out.png", dpi=150, style="bw", title="My Signal", x_lim=(0, 10), y_lim=(0, 100))
+    mock_display.assert_called_once()
+
+
+@patch("HPLC.models.signal.plot_signal_2d")
+def test_display_publication(mock_display, sig: Signal2D):
+    assert sig.display_publication() is sig
+    mock_display.assert_called_once()
+
+
+@patch("HPLC.models.signal.plot_signal_2d")
+def test_display_publication_accepts_optional_parameters(mock_display, sig: Signal2D):
+    sig.display_publication(width=800, height=600, filename="out.png", dpi=150, title="My Signal", x_lim=(0, 10), y_lim=(0, 100))
+    mock_display.assert_called_once()
+
+
 def test_signal_has_optional_peaks_attribute(sig: Signal2D):
     assert hasattr(sig, "peaks")
     assert sig.peaks == []

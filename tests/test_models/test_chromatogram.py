@@ -51,6 +51,24 @@ def test_display_multiple_detectors(mock_plot, chrom):
     mock_plot.assert_called_once()
 
 
+@patch("HPLC.models.chromatogram.plot_chromatogram")
+def test_display_accepts_optional_parameters(mock_plot, chrom):
+    chrom.display(width=800, height=600, filename="out.png", dpi=150, style="bw", title="Custom Title", shared_x=True, x_lim=(0, 10), y_lim=(0, 100))
+    mock_plot.assert_called_once()
+
+
+@patch("HPLC.models.chromatogram.plot_chromatogram")
+def test_display_publication(mock_plot, chrom):
+    assert chrom.display_publication() is chrom
+    mock_plot.assert_called_once()
+
+
+@patch("HPLC.models.chromatogram.plot_chromatogram")
+def test_display_publication_accepts_optional_parameters(mock_plot, chrom):
+    chrom.display_publication(width=800, height=600, filename="out.png", dpi=150, title="Custom Title", shared_x=True, x_lim=(0, 10), y_lim=(0, 100))
+    mock_plot.assert_called_once()
+
+
 def test_detect_peaks_returns_chromatogram(chrom):
     result = chrom.detect_peaks()
     assert isinstance(result, Chromatogram)

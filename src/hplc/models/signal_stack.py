@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 import copy
 
 from HPLC.models.signal import Signal, Signal2D
-from HPLC.graphing import plot_signal_stack_2d
+from HPLC.graphing import plot_signal_2d
 
 
 class SignalStack(ABC):
@@ -138,12 +138,15 @@ class SignalStack2D(SignalStack):
 
     def display(
         self,
-        scrunch: float = 1.0,
+        y_offset: float = 0.0,
         title: str = "Signal Stack",
-        width: int = 700,
-        height: int | None = None,
+        width: int = 520,
+        height: int = 340,
         filename: str | None = None,
         dpi: int = 300,
+        style: str = "color",
+        x_lim: tuple[float | None, float | None] | None = None,
+        y_lim: tuple[float | None, float | None] | None = None,
     ) -> SignalStack2D:
         signal_dicts = []
         for i, sig in enumerate(self.signals):
@@ -168,15 +171,41 @@ class SignalStack2D(SignalStack):
                 "peaks": peak_dicts or None,
                 "delta": self.deltas[i],
                 "stretch_factor": self.stretch_factors[i],
+                "y_offset": i * y_offset,
             })
 
-        plot_signal_stack_2d(
+        plot_signal_2d(
             signals=signal_dicts,
             title=title,
-            scrunch=scrunch,
             width=width,
             height=height,
             filename=filename,
             dpi=dpi,
+            style=style,
+            x_lim=x_lim,
+            y_lim=y_lim,
         )
         return self
+
+    def display_publication(
+        self,
+        y_offset: float = 0.0,
+        title: str = "Signal Stack",
+        width: int = 520,
+        height: int = 340,
+        filename: str | None = None,
+        dpi: int = 300,
+        x_lim: tuple[float | None, float | None] | None = None,
+        y_lim: tuple[float | None, float | None] | None = None,
+    ) -> SignalStack2D:
+        return self.display(
+            y_offset=y_offset,
+            title=title,
+            width=width,
+            height=height,
+            filename=filename,
+            dpi=dpi,
+            style="bw",
+            x_lim=x_lim,
+            y_lim=y_lim,
+        )

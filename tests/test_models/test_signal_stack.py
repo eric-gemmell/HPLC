@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 import numpy as np
+from unittest.mock import patch
 from HPLC.models import Signal2D, SignalStack2D
 from HPLC.testing.mock_generators import make_signal2d
 
@@ -288,8 +289,7 @@ class TestDisplay:
     def test_display_returns_self(self, signal_a, signal_b):
         stack = SignalStack2D([signal_a, signal_b])
         # We just verify it returns self; actual rendering is a graphing concern
-        from unittest.mock import patch
-        with patch("HPLC.models.signal_stack.plot_signal_stack_2d"):
+        with patch("HPLC.models.signal_stack.plot_signal_2d"):
             result = stack.display()
         assert result is stack
 
@@ -297,7 +297,25 @@ class TestDisplay:
         stack = SignalStack2D([signal_a, signal_b])
         stack.shift(delta=5.0, signal=1)
         stack.stretch(factor=1.1, signal=0)
-        from unittest.mock import patch
-        with patch("HPLC.models.signal_stack.plot_signal_stack_2d"):
+        with patch("HPLC.models.signal_stack.plot_signal_2d"):
             result = stack.display()
         assert result is stack
+
+    def test_display_accepts_optional_parameters(self, signal_a, signal_b):
+        stack = SignalStack2D([signal_a, signal_b])
+        with patch("HPLC.models.signal_stack.plot_signal_2d") as mock_display:
+            stack.display(y_offset=50.0, title="My Stack", width=800, height=600, filename="out.png", dpi=150, style="bw", x_lim=(0, 10), y_lim=(0, 100))
+            mock_display.assert_called_once()
+
+    def test_display_publication(self, signal_a, signal_b):
+        stack = SignalStack2D([signal_a, signal_b])
+        with patch("HPLC.models.signal_stack.plot_signal_2d") as mock_display:
+            result = stack.display_publication()
+            assert result is stack
+            mock_display.assert_called_once()
+
+    def test_display_publication_accepts_optional_parameters(self, signal_a, signal_b):
+        stack = SignalStack2D([signal_a, signal_b])
+        with patch("HPLC.models.signal_stack.plot_signal_2d") as mock_display:
+            stack.display_publication(y_offset=50.0, title="My Stack", width=800, height=600, filename="out.png", dpi=150, x_lim=(0, 10), y_lim=(0, 100))
+            mock_display.assert_called_once()
