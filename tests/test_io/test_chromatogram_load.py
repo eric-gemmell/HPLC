@@ -3,7 +3,8 @@ from hplc.io import load
 from hplc.models import Chromatogram
 
 example_ezchrom_filename = "tests/example_chromatograms/example_ez_chrom_chromatogram.dat"
-example_agilent_filename = "tests/example_chromatograms/example_agilent_chromatogram.D"
+example_agilent_d_filename = "tests/example_chromatograms/example_agilent_d_chromatogram.D"
+example_agilent_aia_filename = "tests/example_chromatograms/example_agilent_aia_chromatogram.aia"
 example_shimadzu_filename = "tests/example_chromatograms/example_shimadzu_chromatogram.lcd"
 
 
@@ -12,18 +13,25 @@ def ezchrom_chrom():
     return load(example_ezchrom_filename)
 
 @pytest.fixture(scope="module")
-def agilent_chrom():
-    return load(example_agilent_filename)
+def agilent_d_chrom():
+    return load(example_agilent_d_filename)
 
-@pytest.fixture(params=[example_ezchrom_filename, example_agilent_filename])                                                                                                                                                                
+@pytest.fixture(scope="module")
+def agilent_aia_chrom():
+    return load(example_agilent_aia_filename)
+
+@pytest.fixture(params=[example_ezchrom_filename, example_agilent_d_filename, example_agilent_aia_filename])                                                                                                                                                                
 def chrom(request):                                                                                                                                                                                                                         
     return load(request.param)   
 
 def test_load_ezchrom_returns_chromatogram(ezchrom_chrom):
     assert isinstance(ezchrom_chrom, Chromatogram)
 
-def test_load_agilent_chromatogram_returns_chromatogram(agilent_chrom):
-    assert isinstance(agilent_chrom, Chromatogram)
+def test_load_agilent_d_chromatogram_returns_chromatogram(agilent_d_chrom):
+    assert isinstance(agilent_d_chrom, Chromatogram)
+
+def test_load_agilent_aia_chromatogram_returns_chromatogram(agilent_aia_chrom):
+    assert isinstance(agilent_aia_chrom, Chromatogram)
 
 # def test_load_shimadzu_returns_chromatogram():
 #     chrom = load(example_shimadzu_filename)
