@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 import copy
 
 from hplc.models.signal import Signal, Signal2D
-from hplc.graphing import plot_signal_2d
+from hplc.graphing import plot_2d_graph
 
 
 class SignalStack(ABC):
@@ -63,9 +63,10 @@ class SignalStack(ABC):
 class SignalStack2D(SignalStack):
     """A vertical stack of 2D signals with shift/stretch alignment."""
 
-    def __init__(self, signals: list[Signal2D]) -> None:
+    def __init__(self, signals: list[Signal2D], title: str = "signal stack") -> None:
         super().__init__(signals)
         self.signals: list[Signal2D] = self.signals
+        self.title = title
 
     def shift(
         self,
@@ -139,73 +140,68 @@ class SignalStack2D(SignalStack):
     def display(
         self,
         y_offset: float = 0.0,
-        title: str = "Signal Stack",
-        width: int = 520,
-        height: int = 340,
+        width: int = 1000,
+        height: int = 600,
         filename: str | None = None,
         dpi: int = 300,
         style: str = "color",
-        x_lim: tuple[float | None, float | None] | None = None,
-        y_lim: tuple[float | None, float | None] | None = None,
+        title: str | None = None,
+        x_min: float | None = None,
+        x_max: float | None = None,
+        y_min: float | None = None,
+        y_max: float | None = None,
     ) -> SignalStack2D:
-        signal_dicts = []
+        traces = []
         for i, sig in enumerate(self.signals):
-            peak_dicts = [
-                {
-                    "mu": p.mu,
-                    "amplitude": p.amplitude,
-                    "sigma": p.sigma,
-                    "alpha": p.alpha,
-                    "label": p.compound or f"Peak @ {p.retention_time:.1f}",
-                }
-                for p in sig.peaks
-                if p.mu is not None
-            ]
+            trace = sig.to_trace_properties()
+            offset = i * y_offset
+            trace.signal = trace.signal + offset
+            if trace.baseline is not None:
+                trace.baseline = trace.baseline + offset
+            for fill in (trace.fills or []):
+                fill.upper = fill.upper + offset
+                fill.lower = fill.lower + offset
+            traces.append(trace)
 
-            signal_dicts.append({
-                "name": sig.filename or sig.detector_name or f"Signal {i + 1}",
-                "time": sig.time,
-                "time_unit": sig.time_unit,
-                "signal": sig.signal,
-                "signal_unit": sig.signal_unit,
-                "peaks": peak_dicts or None,
-                "delta": self.deltas[i],
-                "stretch_factor": self.stretch_factors[i],
-                "y_offset": i * y_offset,
-            })
-
-        plot_signal_2d(
-            signals=signal_dicts,
-            title=title,
+        plot_2d_graph(
+            signals=traces,
+            title=title or self.title,
             width=width,
             height=height,
             filename=filename,
             dpi=dpi,
             style=style,
-            x_lim=x_lim,
-            y_lim=y_lim,
+            x_min=x_min,
+            x_max=x_max,
+            y_min=y_min,
+            y_max=y_max,
+            fig=None,
         )
         return self
 
     def display_publication(
         self,
         y_offset: float = 0.0,
-        title: str = "Signal Stack",
-        width: int = 520,
-        height: int = 340,
+        width: int = 1000,
+        height: int = 600,
         filename: str | None = None,
         dpi: int = 300,
-        x_lim: tuple[float | None, float | None] | None = None,
-        y_lim: tuple[float | None, float | None] | None = None,
+        title: str | None = None,
+        x_min: float | None = None,
+        x_max: float | None = None,
+        y_min: float | None = None,
+        y_max: float | None = None,
     ) -> SignalStack2D:
         return self.display(
             y_offset=y_offset,
-            title=title,
             width=width,
             height=height,
             filename=filename,
             dpi=dpi,
             style="bw",
-            x_lim=x_lim,
-            y_lim=y_lim,
+            title=title,
+            x_min=x_min,
+            x_max=x_max,
+            y_min=y_min,
+            y_max=y_max,
         )

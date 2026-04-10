@@ -62,6 +62,14 @@ class TestConstruction:
     def test_rejects_empty_list(self):
         with pytest.raises(ValueError, match="at least one"):
             SignalStack2D([])
+    
+    def test_default_title(self, signal_a):
+        stack = SignalStack2D([signal_a])
+        assert stack.title == "signal stack"
+
+    def test_custom_title(self, signal_a):
+        stack = SignalStack2D([signal_a], title="My Stack")
+        assert stack.title == "My Stack"
 
 
 # ---------------------------------------------------------------------------
@@ -289,7 +297,7 @@ class TestDisplay:
     def test_display_returns_self(self, signal_a, signal_b):
         stack = SignalStack2D([signal_a, signal_b])
         # We just verify it returns self; actual rendering is a graphing concern
-        with patch("hplc.models.signal_stack.plot_signal_2d"):
+        with patch("hplc.models.signal_stack.plot_2d_graph"):
             result = stack.display()
         assert result is stack
 
@@ -297,25 +305,86 @@ class TestDisplay:
         stack = SignalStack2D([signal_a, signal_b])
         stack.shift(delta=5.0, signal=1)
         stack.stretch(factor=1.1, signal=0)
-        with patch("hplc.models.signal_stack.plot_signal_2d"):
+        with patch("hplc.models.signal_stack.plot_2d_graph"):
             result = stack.display()
         assert result is stack
 
     def test_display_accepts_optional_parameters(self, signal_a, signal_b):
         stack = SignalStack2D([signal_a, signal_b])
-        with patch("hplc.models.signal_stack.plot_signal_2d") as mock_display:
-            stack.display(y_offset=50.0, title="My Stack", width=800, height=600, filename="out.png", dpi=150, style="bw", x_lim=(0, 10), y_lim=(0, 100))
+        with patch("hplc.models.signal_stack.plot_2d_graph") as mock_display:
+            stack.display(y_offset=50.0, title="My Stack", width=800, height=600, filename="out.png", dpi=150, style="bw", x_min=0, x_max=10, y_min=0, y_max=100)
             mock_display.assert_called_once()
 
     def test_display_publication(self, signal_a, signal_b):
         stack = SignalStack2D([signal_a, signal_b])
-        with patch("hplc.models.signal_stack.plot_signal_2d") as mock_display:
+        with patch("hplc.models.signal_stack.plot_2d_graph") as mock_display:
             result = stack.display_publication()
             assert result is stack
             mock_display.assert_called_once()
 
     def test_display_publication_accepts_optional_parameters(self, signal_a, signal_b):
         stack = SignalStack2D([signal_a, signal_b])
-        with patch("hplc.models.signal_stack.plot_signal_2d") as mock_display:
-            stack.display_publication(y_offset=50.0, title="My Stack", width=800, height=600, filename="out.png", dpi=150, x_lim=(0, 10), y_lim=(0, 100))
+        with patch("hplc.models.signal_stack.plot_2d_graph") as mock_display:
+            stack.display_publication(y_offset=50.0, title="My Stack", width=800, height=600, filename="out.png", dpi=150, x_min=0, x_max=10, y_min=0, y_max=100)
             mock_display.assert_called_once()
+
+
+@patch("hplc.models.signal_stack.plot_2d_graph")
+def test_display_to_trace_properties_calls_the_signal_methods(mock_plot, signal_a, signal_b, signal_c):
+    stack = SignalStack2D([signal_a, signal_b, signal_c])
+    stack.display()
+
+    expected_traces = [
+        signal_a.to_trace_properties(),
+        signal_b.to_trace_properties(),
+        signal_c.to_trace_properties(),
+    ]
+
+    mock_plot.assert_called_once_with(
+        signals=expected_traces,
+        title=stack.title,
+        width=1000,
+        height=600,
+        filename=None,
+        dpi=300,
+        style="color",
+        x_min=None,
+        x_max=None,
+        y_min=None,
+        y_max=None,
+        fig=None,
+    )
+
+@patch("hplc.models.signal_stack.plot_2d_graph")
+def test_display_accepts_optional_parameters(mock_plot, signal_a, signal_b, signal_c):
+    signals = [signal_a, signal_b, signal_c]
+    stack = SignalStack2D(signals)
+    y_offset = 50.0
+    stack.display(width=800, height=600, filename="out.png", y_offset=y_offset, dpi=150, style="bw", title="I love my stack", x_min=0, x_max=10, y_min=0, y_max=100)
+
+    expected_traces = []
+    for i, signal in enumerate(signals):
+        trace = signal.to_trace_properties()
+        trace.signal += y_offset * i
+        if trace.baseline is not None:
+            trace.baseline += y_offset * i
+
+        for fill in trace.fills:
+            fill.upper += y_offset * i
+            fill.lower += y_offset * i
+        expected_traces.append(trace)
+
+    mock_plot.assert_called_once_with(
+        signals=expected_traces,
+        title="I love my stack",
+        width=800,
+        height=600,
+        filename="out.png",
+        dpi=150,
+        style="bw",
+        x_min=0,
+        x_max=10,
+        y_min=0,
+        y_max=100,
+        fig=None,
+    )

@@ -1,4 +1,4 @@
-from hplc.graphing.signal import plot_signal_2d
-from hplc.graphing.chromatogram import plot_chromatogram
+from hplc.graphing.single_plotting import plot_2d_graph
+from hplc.graphing.multi_plotting import plot_graphs
 
-__all__ = ["plot_signal_2d", "plot_chromatogram"]
+__all__ = ["plot_2d_graph", "plot_graphs"]

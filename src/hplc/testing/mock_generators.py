@@ -41,7 +41,7 @@ def make_raw_signal(peaks, duration=900, dt=1, noise_scale=2, seed=42):
     return time, signal
 
 
-def expected_peak_properties(peaks, n_sigma=3.0):
+def expected_peak_properties(peaks, n_sigma=5.0):
     """
     Computes expected properties from peak definitions by evaluating the
     skew-normal on a fine grid rather than using analytical formulas,

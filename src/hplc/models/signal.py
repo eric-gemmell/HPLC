@@ -4,7 +4,8 @@ from abc import ABC, abstractmethod
  
 import numpy as np
 import copy
-from hplc.graphing import plot_signal_2d
+from hplc.graphing import plot_2d_graph
+from hplc.graphing.graph_models import TraceProperties2D
 from hplc.models.peak import Peak, Peak2D
 from hplc.analysis.peak_detection import detect_peaks
  
@@ -67,6 +68,7 @@ class Signal2D(Signal):
         signal: np.ndarray,
         signal_unit: str,
         filename: str | None = None,
+        baseline: np.ndarray | None = None,
         additional_data: dict | None = None,
         peaks: list[Peak2D] | None = None,
     ) -> None:
@@ -79,14 +81,15 @@ class Signal2D(Signal):
             additional_data=additional_data,
             peaks=peaks,
         )
- 
+
         if len(signal) != len(time):
             raise ValueError(
                 f"time and signal must have the same length, "
                 f"got {len(time)} and {len(signal)}"
             )
- 
+
         self.signal = np.asarray(signal, dtype=float)
+        self.baseline = np.asarray(baseline, dtype=float) if baseline is not None else None
         self.peaks: list[Peak2D] = peaks or []
  
     def detect_peaks(self) -> Signal2D:
@@ -110,26 +113,17 @@ class Signal2D(Signal):
         result._peaks_detected = True
         return result
 
-    def _to_signal_dict(self) -> dict:
-        peak_dicts = [
-            {
-                "mu": p.mu,
-                "amplitude": p.amplitude,
-                "sigma": p.sigma,
-                "alpha": p.alpha,
-                "label": p.compound or f"Peak @ {p.retention_time:.1f}s",
-            }
-            for p in self.peaks
-            if p.mu is not None
-        ]
-        return {
-            "name": self.detector_name,
-            "time": self.time,
-            "time_unit": self.time_unit,
-            "signal": self.signal,
-            "signal_unit": self.signal_unit,
-            "peaks": peak_dicts or None,
-        }
+    def to_trace_properties(self) -> TraceProperties2D:
+        fills = [p.to_fill_region() for p in self.peaks]
+        return TraceProperties2D(
+            name=f"{self.filename}_{self.detector_name}",
+            time=self.time,
+            time_unit=self.time_unit,
+            signal=self.signal,
+            signal_unit=self.signal_unit,
+            fills=fills,
+            baseline=self.baseline,
+        )
 
     def display(
         self,
@@ -139,19 +133,25 @@ class Signal2D(Signal):
         dpi: int = 300,
         style: str = "color",
         title: str | None = None,
-        x_lim: tuple[float | None, float | None] | None = None,
-        y_lim: tuple[float | None, float | None] | None = None,
+        x_min: float | None = None,
+        x_max: float | None = None,
+        y_min: float | None = None,
+        y_max: float | None = None,
     ) -> Signal2D:
-        plot_signal_2d(
-            signals=[self._to_signal_dict()],
-            title=title or self.detector_name,
+        trace = self.to_trace_properties()
+        plot_2d_graph(
+            signals=[trace],
+            title=title or trace.name,
             width=width,
             height=height,
             filename=filename,
             dpi=dpi,
             style=style,
-            x_lim=x_lim,
-            y_lim=y_lim,
+            x_min=x_min,
+            x_max=x_max,
+            y_min=y_min,
+            y_max=y_max,
+            fig=None,
         )
         return self
 
@@ -162,8 +162,10 @@ class Signal2D(Signal):
         filename: str | None = None,
         dpi: int = 300,
         title: str | None = None,
-        x_lim: tuple[float | None, float | None] | None = None,
-        y_lim: tuple[float | None, float | None] | None = None,
+        x_min: float | None = None,
+        x_max: float | None = None,
+        y_min: float | None = None,
+        y_max: float | None = None,
     ) -> Signal2D:
         return self.display(
             width=width,
@@ -172,8 +174,10 @@ class Signal2D(Signal):
             dpi=dpi,
             style="bw",
             title=title,
-            x_lim=x_lim,
-            y_lim=y_lim,
+            x_min=x_min,
+            x_max=x_max,
+            y_min=y_min,
+            y_max=y_max,
         )
 
     def stack(self, *others: Signal2D) -> SignalStack2D:
