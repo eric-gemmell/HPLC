@@ -154,6 +154,16 @@ class SignalStack2D(SignalStack):
         traces = []
         for i, sig in enumerate(self.signals):
             trace = sig.to_trace_properties()
+
+            # Apply stretch and shift to time axis
+            stretch = self.stretch_factors[i]
+            delta = self.deltas[i]
+            if stretch != 1.0 or delta != 0.0:
+                trace.time = trace.time * stretch + delta
+                for fill in (trace.fills or []):
+                    fill.time = fill.time * stretch + delta
+
+            # Apply vertical offset
             offset = i * y_offset
             trace.signal = trace.signal + offset
             if trace.baseline is not None:

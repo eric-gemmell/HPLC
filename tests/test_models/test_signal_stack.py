@@ -388,3 +388,57 @@ def test_display_accepts_optional_parameters(mock_plot, signal_a, signal_b, sign
         y_max=100,
         fig=None,
     )
+
+@patch("hplc.models.signal_stack.plot_2d_graph")
+def test_display_shifts_peaks_according_to_previously_set_stretch_and_fit_optional_parameters(mock_plot, signal_a, signal_b, signal_c):
+    signals = [signal_a, signal_b, signal_c]
+    stack = SignalStack2D(signals)
+    stack = stack.shift(delta=5.0, signal=0).stretch(factor=2, signal=1).fit(from_times=(90.0, 310.0), to_times=(100.0, 300.0), signal=2)
+    y_offset = 50.0
+    stack.display(width=800, height=600, filename="out.png", y_offset=y_offset, dpi=150, style="bw", title="I love my stack", x_min=0, x_max=10, y_min=0, y_max=100)
+
+    offset_traces = []
+    for i, signal in enumerate(signals):
+        trace = signal.to_trace_properties()
+
+        trace.signal += y_offset * i
+        if trace.baseline is not None:
+            trace.baseline += y_offset * i
+
+        for fill in trace.fills:
+            fill.upper += y_offset * i
+            fill.lower += y_offset * i
+
+        offset_traces.append(trace)
+
+    expected_traces = []
+    for i, trace in enumerate(offset_traces):
+        if i == 0:
+            trace.time += 5.0
+            for fill in trace.fills:
+                fill.time += 5.0
+
+        elif i == 1:
+            trace.time *= 2
+
+        elif i == 2:
+            stretch_factor =  (300.0 - 100.0) / (310.0-90.0) 
+            delta = 100.0 - stretch_factor * 90.0
+            trace.time = trace.time * stretch_factor + delta
+
+        expected_traces.append(trace)
+
+    mock_plot.assert_called_once_with(
+        signals=expected_traces,
+        title="I love my stack",
+        width=800,
+        height=600,
+        filename="out.png",
+        dpi=150,
+        style="bw",
+        x_min=0,
+        x_max=10,
+        y_min=0,
+        y_max=100,
+        fig=None,
+    )
