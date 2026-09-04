@@ -16,6 +16,10 @@ class SignalStack(ABC):
         self.signals = list(signals)
         self.deltas: list[float] = [0.0] * len(signals)
         self.stretch_factors: list[float] = [1.0] * len(signals)
+        self.y_scales: list[float] = [1.0] * len(signals)
+        self.labels: list[str | None] = [None] * len(signals)
+        self.colors: list[str | None] = [None] * len(signals)
+        self.line_widths: list[float | None] = [None] * len(signals)
 
     def __len__(self) -> int:
         return len(self.signals)
@@ -55,6 +59,21 @@ class SignalStack(ABC):
 
     def _copy(self) -> SignalStack:
         return copy.deepcopy(self)
+
+    def set_label(self, signal: int, name: str) -> SignalStack:
+        idx = self._resolve_index(signal=signal)
+        self.labels[idx] = name
+        return self._copy()
+
+    def set_color(self, signal: int, color: str) -> SignalStack:
+        idx = self._resolve_index(signal=signal)
+        self.colors[idx] = color
+        return self._copy()
+
+    def set_line_width(self, signal: int, line_width: float) -> SignalStack:
+        idx = self._resolve_index(signal=signal)
+        self.line_widths[idx] = line_width
+        return self._copy()
 
     @abstractmethod
     def display(self): ...
@@ -113,6 +132,22 @@ class SignalStack2D(SignalStack):
 
         return self._copy()
 
+    def scale_y(
+        self,
+        factor: float,
+        signal: int | None = None,
+        filename: str | None = None,
+        detector_name: str | None = None,
+    ) -> SignalStack2D:
+        if factor <= 0:
+            raise ValueError("Factor must be positive")
+
+        idx = self._resolve_index(signal=signal, filename=filename, detector_name=detector_name)
+
+        self.y_scales[idx] *= factor
+
+        return self._copy()
+
     def fit(
         self,
         from_times: tuple[float, float],
@@ -150,10 +185,40 @@ class SignalStack2D(SignalStack):
         x_max: float | None = None,
         y_min: float | None = None,
         y_max: float | None = None,
+        labels: list[str] | None = None,
+        colors: list[str] | None = None,
+        line_widths: list[float] | None = None,
     ) -> SignalStack2D:
+        if labels is not None and len(labels) != len(self.signals):
+            raise ValueError(
+                f"labels must have one entry per signal ({len(self.signals)}), got {len(labels)}"
+            )
+        if colors is not None and len(colors) != len(self.signals):
+            raise ValueError(
+                f"colors must have one entry per signal ({len(self.signals)}), got {len(colors)}"
+            )
+        if line_widths is not None and len(line_widths) != len(self.signals):
+            raise ValueError(
+                f"line_widths must have one entry per signal ({len(self.signals)}), got {len(line_widths)}"
+            )
+
         traces = []
         for i, sig in enumerate(self.signals):
             trace = sig.to_trace_properties()
+            if labels is not None:
+                trace.name = labels[i]
+            elif self.labels[i] is not None:
+                trace.name = self.labels[i]
+
+            if colors is not None:
+                trace.color = colors[i]
+            elif self.colors[i] is not None:
+                trace.color = self.colors[i]
+
+            if line_widths is not None:
+                trace.line_width = line_widths[i]
+            elif self.line_widths[i] is not None:
+                trace.line_width = self.line_widths[i]
 
             # Apply stretch and shift to time axis
             stretch = self.stretch_factors[i]
@@ -162,6 +227,16 @@ class SignalStack2D(SignalStack):
                 trace.time = trace.time * stretch + delta
                 for fill in (trace.fills or []):
                     fill.time = fill.time * stretch + delta
+
+            # Apply per-signal y scale
+            y_scale = self.y_scales[i]
+            if y_scale != 1.0:
+                trace.signal = trace.signal * y_scale
+                if trace.baseline is not None:
+                    trace.baseline = trace.baseline * y_scale
+                for fill in (trace.fills or []):
+                    fill.upper = fill.upper * y_scale
+                    fill.lower = fill.lower * y_scale
 
             # Apply vertical offset
             offset = i * y_offset
@@ -201,6 +276,9 @@ class SignalStack2D(SignalStack):
         x_max: float | None = None,
         y_min: float | None = None,
         y_max: float | None = None,
+        labels: list[str] | None = None,
+        colors: list[str] | None = None,
+        line_widths: list[float] | None = None,
     ) -> SignalStack2D:
         return self.display(
             y_offset=y_offset,
@@ -214,4 +292,7 @@ class SignalStack2D(SignalStack):
             x_max=x_max,
             y_min=y_min,
             y_max=y_max,
+            labels=labels,
+            colors=colors,
+            line_widths=line_widths,
         )

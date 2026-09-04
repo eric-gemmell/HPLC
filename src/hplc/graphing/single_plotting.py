@@ -103,7 +103,7 @@ def plot_2d_graph(
                 x=time,
                 y=signal,
                 mode="lines",
-                line=dict(color=color, width=1.5),
+                line=dict(color=color, width=s.line_width or 1.5),
                 name=s.name,
                 legendgroup=s.name,
                 hovertemplate=(

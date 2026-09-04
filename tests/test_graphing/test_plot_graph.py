@@ -112,6 +112,16 @@ class TestAcceptsParameters:
         fig = plot_2d_graph(signals=[t])
         assert isinstance(fig, go.Figure)
 
+    def test_line_width_override(self):
+        t = _trace()
+        t.line_width = 4.0
+        fig = plot_2d_graph(signals=[t])
+        assert fig.data[0].line.width == 4.0
+
+    def test_default_line_width(self):
+        fig = plot_2d_graph(signals=[_trace()])
+        assert fig.data[0].line.width == 1.5
+
 
 class TestFigureInjection:
 

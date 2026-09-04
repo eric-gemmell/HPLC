@@ -33,6 +33,7 @@ class TraceProperties2D:
     fills: list[FillRegion] | None = None
     baseline: np.ndarray | None = None
     color: str | None = None
+    line_width: float | None = None
 
     def __eq__(self, other):
         if not isinstance(other, TraceProperties2D):
@@ -46,6 +47,7 @@ class TraceProperties2D:
             and self.fills == other.fills
             and np.array_equal(self.baseline, other.baseline)
             and self.color == other.color
+            and self.line_width == other.line_width
         )
 
 

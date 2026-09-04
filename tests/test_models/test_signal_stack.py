@@ -55,6 +55,26 @@ class TestConstruction:
         for sf in stack.stretch_factors:
             assert sf == 1.0
 
+    def test_initial_y_scales_are_one(self, signal_a, signal_b):
+        stack = SignalStack2D([signal_a, signal_b])
+        for ys in stack.y_scales:
+            assert ys == 1.0
+
+    def test_initial_labels_are_none(self, signal_a, signal_b):
+        stack = SignalStack2D([signal_a, signal_b])
+        for label in stack.labels:
+            assert label is None
+
+    def test_initial_colors_are_none(self, signal_a, signal_b):
+        stack = SignalStack2D([signal_a, signal_b])
+        for color in stack.colors:
+            assert color is None
+
+    def test_initial_line_widths_are_none(self, signal_a, signal_b):
+        stack = SignalStack2D([signal_a, signal_b])
+        for line_width in stack.line_widths:
+            assert line_width is None
+
     def test_stack_works_with_just_one_signal(self, signal_a):
         stack = SignalStack2D([signal_a])
         assert len(stack) == 1
@@ -225,6 +245,121 @@ class TestStretch:
 
 
 # ---------------------------------------------------------------------------
+# Scale Y (per-signal vertical scaling)
+# ---------------------------------------------------------------------------
+
+class TestScaleY:
+
+    def test_scale_y_returns_new_stack(self, signal_a, signal_b):
+        stack = SignalStack2D([signal_a, signal_b])
+        result = stack.scale_y(factor=1.5, signal=1)
+        assert isinstance(result, SignalStack2D)
+        assert result is not stack
+
+    def test_scale_y_updates_factor(self, signal_a, signal_b):
+        stack = SignalStack2D([signal_a, signal_b])
+        stack.scale_y(factor=1.5, signal=1)
+        assert stack.y_scales[1] == pytest.approx(1.5)
+        assert stack.y_scales[0] == 1.0
+
+    def test_scale_y_accumulates_multiplicatively(self, signal_a, signal_b):
+        stack = SignalStack2D([signal_a, signal_b])
+        stack.scale_y(factor=1.1, signal=1)
+        stack.scale_y(factor=0.9, signal=1)
+        assert stack.y_scales[1] == pytest.approx(1.1 * 0.9)
+
+    def test_scale_y_rejects_zero_factor(self, signal_a, signal_b):
+        stack = SignalStack2D([signal_a, signal_b])
+        with pytest.raises(ValueError, match="[Ff]actor"):
+            stack.scale_y(factor=0.0, signal=1)
+
+    def test_scale_y_rejects_negative_factor(self, signal_a, signal_b):
+        stack = SignalStack2D([signal_a, signal_b])
+        with pytest.raises(ValueError, match="[Ff]actor"):
+            stack.scale_y(factor=-1.0, signal=1)
+
+    def test_scale_y_select_by_name(self, signal_a, signal_b):
+        stack = SignalStack2D([signal_a, signal_b])
+        stack.scale_y(factor=2.0, filename="file_A")
+        assert stack.y_scales[0] == pytest.approx(2.0)
+        assert stack.y_scales[1] == 1.0
+
+    def test_scale_y_select_by_detector(self, signal_a, signal_b):
+        stack = SignalStack2D([signal_a, signal_b])
+        stack.scale_y(factor=2.0, detector_name="DAD 280 nm")
+        assert stack.y_scales[0] == 1.0
+        assert stack.y_scales[1] == pytest.approx(2.0)
+
+    def test_scale_y_defaults_to_last_signal(self, signal_a, signal_b):
+        stack = SignalStack2D([signal_a, signal_b])
+        stack.scale_y(factor=2.0)
+        assert stack.y_scales[0] == 1.0
+        assert stack.y_scales[1] == pytest.approx(2.0)
+
+    def test_scale_y_invalid_index_raises(self, signal_a, signal_b):
+        stack = SignalStack2D([signal_a, signal_b])
+        with pytest.raises(IndexError):
+            stack.scale_y(factor=2.0, signal=5)
+
+
+# ---------------------------------------------------------------------------
+# Set label
+# ---------------------------------------------------------------------------
+
+class TestSetLabel:
+
+    def test_set_label_updates_label(self, signal_a, signal_b):
+        stack = SignalStack2D([signal_a, signal_b])
+        stack.set_label(1, "My Custom Label")
+        assert stack.labels[1] == "My Custom Label"
+        assert stack.labels[0] is None
+
+    def test_set_label_returns_new_stack(self, signal_a, signal_b):
+        stack = SignalStack2D([signal_a, signal_b])
+        result = stack.set_label(0, "My Custom Label")
+        assert isinstance(result, SignalStack2D)
+        assert result is not stack
+
+
+# ---------------------------------------------------------------------------
+# Set color
+# ---------------------------------------------------------------------------
+
+class TestSetColor:
+
+    def test_set_color_updates_color(self, signal_a, signal_b):
+        stack = SignalStack2D([signal_a, signal_b])
+        stack.set_color(1, "#ff0000")
+        assert stack.colors[1] == "#ff0000"
+        assert stack.colors[0] is None
+
+    def test_set_color_returns_new_stack(self, signal_a, signal_b):
+        stack = SignalStack2D([signal_a, signal_b])
+        result = stack.set_color(0, "#ff0000")
+        assert isinstance(result, SignalStack2D)
+        assert result is not stack
+
+
+# ---------------------------------------------------------------------------
+# Set line width
+# ---------------------------------------------------------------------------
+
+class TestSetLineWidth:
+
+    def test_set_line_width_updates_line_width(self, signal_a, signal_b):
+        stack = SignalStack2D([signal_a, signal_b])
+        stack.set_line_width(1, 4.0)
+        assert stack.line_widths[1] == 4.0
+        assert stack.line_widths[0] is None
+
+    def test_set_line_width_returns_new_stack(self, signal_a, signal_b):
+        stack = SignalStack2D([signal_a, signal_b])
+        result = stack.set_line_width(0, 4.0)
+        assert isinstance(result, SignalStack2D)
+        assert result is not stack
+
+
+# ---------------------------------------------------------------------------
 # Fit (two-point alignment)
 # ---------------------------------------------------------------------------
 
@@ -388,6 +523,194 @@ def test_display_accepts_optional_parameters(mock_plot, signal_a, signal_b, sign
         y_max=100,
         fig=None,
     )
+
+@patch("hplc.models.signal_stack.plot_2d_graph")
+def test_display_applies_y_scale_to_plotted_signal(mock_plot, signal_a, signal_b):
+    stack = SignalStack2D([signal_a, signal_b])
+    stack = stack.scale_y(factor=2.0, signal=1)
+    assert stack.y_scales == [1.0, 2.0]
+
+    stack.display()
+
+    plotted_traces = mock_plot.call_args.kwargs["signals"]
+    expected_signal_1 = signal_b.to_trace_properties().signal * 2.0
+    np.testing.assert_allclose(plotted_traces[1].signal, expected_signal_1)
+    np.testing.assert_allclose(plotted_traces[0].signal, signal_a.to_trace_properties().signal)
+
+
+@patch("hplc.models.signal_stack.plot_2d_graph")
+def test_display_uses_custom_label(mock_plot, signal_a, signal_b):
+    stack = SignalStack2D([signal_a, signal_b])
+    stack = stack.set_label(1, "My Custom Label")
+
+    stack.display()
+
+    plotted_traces = mock_plot.call_args.kwargs["signals"]
+    assert plotted_traces[1].name == "My Custom Label"
+    assert plotted_traces[0].name == signal_a.to_trace_properties().name
+
+
+@patch("hplc.models.signal_stack.plot_2d_graph")
+def test_display_accepts_labels_array_overriding_all_defaults(mock_plot, signal_a, signal_b):
+    stack = SignalStack2D([signal_a, signal_b])
+
+    stack.display(labels=["Label A", "Label B"])
+
+    plotted_traces = mock_plot.call_args.kwargs["signals"]
+    assert plotted_traces[0].name == "Label A"
+    assert plotted_traces[1].name == "Label B"
+
+
+@patch("hplc.models.signal_stack.plot_2d_graph")
+def test_display_labels_array_overrides_previously_set_label(mock_plot, signal_a, signal_b):
+    stack = SignalStack2D([signal_a, signal_b])
+    stack = stack.set_label(1, "My Custom Label")
+
+    stack.display(labels=["Label A", "Label B"])
+
+    plotted_traces = mock_plot.call_args.kwargs["signals"]
+    assert plotted_traces[0].name == "Label A"
+    assert plotted_traces[1].name == "Label B"
+
+
+def test_display_rejects_labels_array_of_wrong_length(signal_a, signal_b):
+    stack = SignalStack2D([signal_a, signal_b])
+    with pytest.raises(ValueError, match="labels"):
+        stack.display(labels=["Only One Label"])
+
+
+@patch("hplc.models.signal_stack.plot_2d_graph")
+def test_display_publication_accepts_labels_array_overriding_all_defaults(mock_plot, signal_a, signal_b):
+    stack = SignalStack2D([signal_a, signal_b])
+
+    stack.display_publication(labels=["Label A", "Label B"])
+
+    plotted_traces = mock_plot.call_args.kwargs["signals"]
+    assert plotted_traces[0].name == "Label A"
+    assert plotted_traces[1].name == "Label B"
+
+
+def test_display_publication_rejects_labels_array_of_wrong_length(signal_a, signal_b):
+    stack = SignalStack2D([signal_a, signal_b])
+    with pytest.raises(ValueError, match="labels"):
+        stack.display_publication(labels=["Only One Label"])
+
+
+@patch("hplc.models.signal_stack.plot_2d_graph")
+def test_display_uses_custom_color(mock_plot, signal_a, signal_b):
+    stack = SignalStack2D([signal_a, signal_b])
+    stack = stack.set_color(1, "#ff0000")
+
+    stack.display()
+
+    plotted_traces = mock_plot.call_args.kwargs["signals"]
+    assert plotted_traces[1].color == "#ff0000"
+    assert plotted_traces[0].color is None
+
+
+@patch("hplc.models.signal_stack.plot_2d_graph")
+def test_display_accepts_colors_array_overriding_all_defaults(mock_plot, signal_a, signal_b):
+    stack = SignalStack2D([signal_a, signal_b])
+
+    stack.display(colors=["#ff0000", "#00ff00"])
+
+    plotted_traces = mock_plot.call_args.kwargs["signals"]
+    assert plotted_traces[0].color == "#ff0000"
+    assert plotted_traces[1].color == "#00ff00"
+
+
+@patch("hplc.models.signal_stack.plot_2d_graph")
+def test_display_colors_array_overrides_previously_set_color(mock_plot, signal_a, signal_b):
+    stack = SignalStack2D([signal_a, signal_b])
+    stack = stack.set_color(1, "#000000")
+
+    stack.display(colors=["#ff0000", "#00ff00"])
+
+    plotted_traces = mock_plot.call_args.kwargs["signals"]
+    assert plotted_traces[0].color == "#ff0000"
+    assert plotted_traces[1].color == "#00ff00"
+
+
+def test_display_rejects_colors_array_of_wrong_length(signal_a, signal_b):
+    stack = SignalStack2D([signal_a, signal_b])
+    with pytest.raises(ValueError, match="colors"):
+        stack.display(colors=["#ff0000"])
+
+
+@patch("hplc.models.signal_stack.plot_2d_graph")
+def test_display_publication_accepts_colors_array_overriding_all_defaults(mock_plot, signal_a, signal_b):
+    stack = SignalStack2D([signal_a, signal_b])
+
+    stack.display_publication(colors=["#ff0000", "#00ff00"])
+
+    plotted_traces = mock_plot.call_args.kwargs["signals"]
+    assert plotted_traces[0].color == "#ff0000"
+    assert plotted_traces[1].color == "#00ff00"
+
+
+def test_display_publication_rejects_colors_array_of_wrong_length(signal_a, signal_b):
+    stack = SignalStack2D([signal_a, signal_b])
+    with pytest.raises(ValueError, match="colors"):
+        stack.display_publication(colors=["#ff0000"])
+
+
+@patch("hplc.models.signal_stack.plot_2d_graph")
+def test_display_uses_custom_line_width(mock_plot, signal_a, signal_b):
+    stack = SignalStack2D([signal_a, signal_b])
+    stack = stack.set_line_width(1, 4.0)
+
+    stack.display()
+
+    plotted_traces = mock_plot.call_args.kwargs["signals"]
+    assert plotted_traces[1].line_width == 4.0
+    assert plotted_traces[0].line_width is None
+
+
+@patch("hplc.models.signal_stack.plot_2d_graph")
+def test_display_accepts_line_widths_array_overriding_all_defaults(mock_plot, signal_a, signal_b):
+    stack = SignalStack2D([signal_a, signal_b])
+
+    stack.display(line_widths=[2.0, 4.0])
+
+    plotted_traces = mock_plot.call_args.kwargs["signals"]
+    assert plotted_traces[0].line_width == 2.0
+    assert plotted_traces[1].line_width == 4.0
+
+
+@patch("hplc.models.signal_stack.plot_2d_graph")
+def test_display_line_widths_array_overrides_previously_set_line_width(mock_plot, signal_a, signal_b):
+    stack = SignalStack2D([signal_a, signal_b])
+    stack = stack.set_line_width(1, 1.0)
+
+    stack.display(line_widths=[2.0, 4.0])
+
+    plotted_traces = mock_plot.call_args.kwargs["signals"]
+    assert plotted_traces[0].line_width == 2.0
+    assert plotted_traces[1].line_width == 4.0
+
+
+def test_display_rejects_line_widths_array_of_wrong_length(signal_a, signal_b):
+    stack = SignalStack2D([signal_a, signal_b])
+    with pytest.raises(ValueError, match="line_widths"):
+        stack.display(line_widths=[2.0])
+
+
+@patch("hplc.models.signal_stack.plot_2d_graph")
+def test_display_publication_accepts_line_widths_array_overriding_all_defaults(mock_plot, signal_a, signal_b):
+    stack = SignalStack2D([signal_a, signal_b])
+
+    stack.display_publication(line_widths=[2.0, 4.0])
+
+    plotted_traces = mock_plot.call_args.kwargs["signals"]
+    assert plotted_traces[0].line_width == 2.0
+    assert plotted_traces[1].line_width == 4.0
+
+
+def test_display_publication_rejects_line_widths_array_of_wrong_length(signal_a, signal_b):
+    stack = SignalStack2D([signal_a, signal_b])
+    with pytest.raises(ValueError, match="line_widths"):
+        stack.display_publication(line_widths=[2.0])
+
 
 @patch("hplc.models.signal_stack.plot_2d_graph")
 def test_display_shifts_peaks_according_to_previously_set_stretch_and_fit_optional_parameters(mock_plot, signal_a, signal_b, signal_c):
