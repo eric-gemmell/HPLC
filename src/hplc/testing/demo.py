@@ -12,9 +12,10 @@ from __future__ import annotations
 import numpy as np
 from scipy.special import erf
 
-from hplc.testing.mock_generators import make_raw_signal
+from hplc.testing.mock_generators import make_raw_signal, make_signal3d
 from hplc.graphing.graph_models import TraceProperties2D, TraceProperties3D, FillRegion, GraphProperties2D
 from hplc.graphing import plot_2d_graph, plot_3d_graph, plot_graphs
+from hplc.models import Chromatogram, Signal2D
 
 
 DEMO_PEAKS_190 = [
@@ -241,3 +242,64 @@ def demo_plot_signal_3d(
         z_min=z_min,
         z_max=z_max,
     )
+
+
+def make_demo_chromatogram_3d(filename: str = "demo_sample.lcd") -> Chromatogram:
+    """A mock Shimadzu-shaped chromatogram: one PDA cube plus one RID trace."""
+    analytes = [
+        {"mu": 120, "amplitude": 900,  "sigma": 10, "alpha": 1.0, "lmax": 300, "band": 34},
+        {"mu": 250, "amplitude": 1400, "sigma": 14, "alpha": 2.5, "lmax": 400, "band": 44},
+        {"mu": 330, "amplitude": 450,  "sigma": 8,  "alpha": 0.4, "lmax": 254, "band": 22},
+        {"mu": 470, "amplitude": 700,  "sigma": 26, "alpha": 6.0, "lmax": 228, "band": 30},
+    ]
+    pda = make_signal3d(
+        analytes,
+        detector_name="PDA",
+        filename=filename,
+        duration=600,
+        dt=1,
+        noise_scale=4.0,
+        seed=7,
+    )
+
+    # A refractive-index trace alongside it, as a real .lcd carries.
+    rid_time, rid_signal = make_raw_signal(
+        [{"mu": a["mu"], "amplitude": a["amplitude"] / 3, "sigma": a["sigma"], "alpha": a["alpha"]}
+         for a in analytes],
+        duration=600, dt=1, noise_scale=3.0, seed=11,
+    )
+    rid = Signal2D(
+        detector_name="RID",
+        time=rid_time,
+        time_unit="s",
+        signal=rid_signal,
+        signal_unit="uRI",
+        filename=filename,
+    )
+
+    return Chromatogram(signals={"PDA": pda, "RID": rid}, filename=filename)
+
+
+def demo_chromatogram_3d(wavelengths=(254, 300, 400)):
+    """
+    Visual demo of a mixed 2D/3D chromatogram. Call from a REPL or notebook:
+
+        from hplc.testing.demo import demo_chromatogram_3d
+        demo_chromatogram_3d()
+
+    Shows, in order:
+      1. the PDA cube and the RID trace side by side in one figure
+      2. the same chromatogram after extracting three single-wavelength traces
+
+    Returns the extracted Chromatogram so you can keep working with it.
+    """
+    chrom = make_demo_chromatogram_3d()
+    chrom.display(title="Mock .lcd — PDA cube + RID trace", width=560, height=380)
+
+    extracted = chrom.extract_wavelengths(list(wavelengths), bandwidth=4)
+    extracted.display(
+        title=f"After extract_wavelengths({list(wavelengths)}, bandwidth=4)",
+        width=460,
+        height=320,
+    )
+    return extracted

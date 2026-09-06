@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.special import erf
-from hplc.models.signal import Signal2D
+from hplc.models.signal import Signal2D, Signal3D
 from hplc.models.chromatogram import Chromatogram
 
 
@@ -103,3 +103,64 @@ def make_chromatogram(signal_definitions, filename="test_sample.dat"):
         kwargs.setdefault("detector_name", name)
         signals[name] = make_signal2d(**kwargs)
     return Chromatogram(signals=signals, filename=filename)
+
+def make_pda_cube(
+    analytes,
+    duration=900,
+    dt=1,
+    wl_min=190.0,
+    wl_max=600.0,
+    wl_step=2.0,
+    noise_scale=2.0,
+    solvent_ridge=260.0,
+    seed=42,
+):
+    """
+    Returns (time, wavelengths, signal) with signal.shape == (len(time), len(wavelengths)).
+
+    analytes: list of dicts, each with the skew-normal chromatographic terms
+        - mu, amplitude, sigma, alpha   (as make_raw_signal)
+    plus its UV absorption band:
+        - lmax: float, absorption maximum (nm)
+        - band: float, band width (nm)
+
+    Each analyte contributes the outer product of its chromatographic peak
+    and its (gaussian) absorption band, which is how a real PDA cube is
+    structured: one spectrum per time point, scaled by the elution profile.
+    """
+    rng = np.random.default_rng(seed)
+    time = np.arange(0, duration, dt, dtype=float)
+    wavelengths = np.arange(wl_min, wl_max + wl_step, wl_step, dtype=float)
+
+    signal = rng.normal(0.0, noise_scale, size=(len(time), len(wavelengths)))
+
+    if solvent_ridge:
+        # Mobile phase absorbs hard at the low-wavelength edge.
+        signal += solvent_ridge * np.exp(-(wavelengths[None, :] - wl_min) / 26.0)
+
+    for a in analytes:
+        chrom = _skew_normal(time, a["amplitude"], a["mu"], a["sigma"], a["alpha"])
+        spectrum = np.exp(-0.5 * ((wavelengths - a["lmax"]) / a["band"]) ** 2)
+        signal += np.outer(chrom, spectrum)
+
+    return time, wavelengths, signal
+
+
+def make_signal3d(
+    analytes,
+    detector_name="PDA",
+    signal_unit="mAU",
+    filename=None,
+    **cube_kwargs,
+):
+    time, wavelengths, signal = make_pda_cube(analytes, **cube_kwargs)
+    return Signal3D(
+        detector_name=detector_name,
+        time=time,
+        time_unit="s",
+        wavelengths=wavelengths,
+        wavelength_unit="nm",
+        signal=signal,
+        signal_unit=signal_unit,
+        filename=filename,
+    )

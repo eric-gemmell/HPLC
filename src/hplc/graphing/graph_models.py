@@ -142,3 +142,17 @@ class GraphProperties2D:
     x_max: float | None = None
     y_min: float | None = None
     y_max: float | None = None
+
+
+@dataclass
+class GraphProperties3D:
+    """One 3D panel: a single intensity surface plus its panel-level limits."""
+
+    signal: TraceProperties3D
+    title: str = ""
+    x_min: float | None = None
+    x_max: float | None = None
+    y_min: float | None = None
+    y_max: float | None = None
+    z_min: float | None = None
+    z_max: float | None = None

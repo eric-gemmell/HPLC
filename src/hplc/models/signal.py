@@ -4,8 +4,8 @@ from abc import ABC, abstractmethod
  
 import numpy as np
 import copy
-from hplc.graphing import plot_2d_graph
-from hplc.graphing.graph_models import TraceProperties2D
+from hplc.graphing import plot_2d_graph, plot_3d_graph
+from hplc.graphing.graph_models import TraceProperties2D, TraceProperties3D
 from hplc.models.peak import Peak, Peak2D
 from hplc.analysis.peak_detection import detect_peaks
  
@@ -53,6 +53,11 @@ class Signal(ABC):
     def _copy(self) -> Signal:
         return copy.deepcopy(self)
         
+    @abstractmethod
+    def to_trace_properties(self):
+        """Convert to the graphing layer's DTO for this signal's dimensionality."""
+        ...
+
     @abstractmethod
     def display(self):
         ...
@@ -183,3 +188,178 @@ class Signal2D(Signal):
     def stack(self, *others: Signal2D) -> SignalStack2D:
         from hplc.models.signal_stack import SignalStack2D  # avoid circular import
         return SignalStack2D([self, *others])
+
+class Signal3D(Signal):
+    """A time x wavelength intensity surface, e.g. a PDA/DAD cube.
+
+    `signal` is indexed time-first: signal[i] is the spectrum at time[i],
+    so its shape is (len(time), len(wavelengths)).
+    """
+
+    def __init__(
+        self,
+        detector_name: str,
+        time: np.ndarray,
+        time_unit: str,
+        wavelengths: np.ndarray,
+        wavelength_unit: str,
+        signal: np.ndarray,
+        signal_unit: str,
+        filename: str | None = None,
+        additional_data: dict | None = None,
+    ) -> None:
+        super().__init__(
+            detector_name=detector_name,
+            time=time,
+            time_unit=time_unit,
+            signal_unit=signal_unit,
+            filename=filename,
+            additional_data=additional_data,
+        )
+
+        if not wavelength_unit:
+            raise ValueError("Wavelength unit required")
+
+        self.wavelength_unit = wavelength_unit
+        self.wavelengths = np.asarray(wavelengths, dtype=float)
+        self.signal = np.asarray(signal, dtype=float)
+
+        if self.wavelengths.size == 0:
+            raise ValueError("wavelengths must contain at least one point")
+        if self.signal.ndim != 2:
+            raise ValueError(
+                f"signal must be a 2D array, got {self.signal.ndim} dimension(s)"
+            )
+
+        expected = (len(self.time), len(self.wavelengths))
+        if self.signal.shape != expected:
+            raise ValueError(
+                f"signal shape {self.signal.shape} does not match "
+                f"(len(time), len(wavelengths)) = {expected}"
+            )
+
+    # -- graphing -----------------------------------------------------------
+
+    def to_trace_properties(
+        self,
+        colors: list[str] | None = None,
+        color_values: np.ndarray | None = None,
+    ) -> TraceProperties3D:
+        return TraceProperties3D(
+            name=f"{self.filename}_{self.detector_name}",
+            time=self.time,
+            time_unit=self.time_unit,
+            wavelengths=self.wavelengths,
+            wavelength_unit=self.wavelength_unit,
+            signal=self.signal,
+            signal_unit=self.signal_unit,
+            colors=colors,
+            color_values=color_values,
+        )
+
+    def display(
+        self,
+        width: int = 520,
+        height: int = 340,
+        filename: str | None = None,
+        dpi: int = 300,
+        title: str | None = None,
+        x_min: float | None = None,
+        x_max: float | None = None,
+        y_min: float | None = None,
+        y_max: float | None = None,
+        z_min: float | None = None,
+        z_max: float | None = None,
+        colors: list[str] | None = None,
+        color_values: np.ndarray | None = None,
+    ) -> Signal3D:
+        trace = self.to_trace_properties(colors=colors, color_values=color_values)
+        plot_3d_graph(
+            signal=trace,
+            title=title or trace.name,
+            width=width,
+            height=height,
+            filename=filename,
+            dpi=dpi,
+            x_min=x_min,
+            x_max=x_max,
+            y_min=y_min,
+            y_max=y_max,
+            z_min=z_min,
+            z_max=z_max,
+            fig=None,
+        )
+        return self
+
+    # -- extracting 2D traces -----------------------------------------------
+
+    def _check_wavelength(self, wavelength: float) -> None:
+        low = float(self.wavelengths.min())
+        high = float(self.wavelengths.max())
+        if not low <= wavelength <= high:
+            raise ValueError(
+                f"wavelength {wavelength:g} {self.wavelength_unit} lies outside the "
+                f"measured range {low:g}-{high:g} {self.wavelength_unit}"
+            )
+
+    def at_wavelength(self, wavelength: float, bandwidth: float = 0.0) -> Signal2D:
+        """Extract a single 2D trace at `wavelength`.
+
+        Snaps to the nearest measured wavelength. With `bandwidth` > 0 the
+        columns within +/- bandwidth/2 are averaged, as a real detector does.
+        """
+        if bandwidth < 0:
+            raise ValueError("bandwidth must not be negative")
+        self._check_wavelength(wavelength)
+
+        nearest = int(np.argmin(np.abs(self.wavelengths - wavelength)))
+        used = float(self.wavelengths[nearest])
+
+        if bandwidth > 0:
+            mask = np.abs(self.wavelengths - wavelength) <= bandwidth / 2
+            if not mask.any():
+                mask = np.zeros(len(self.wavelengths), dtype=bool)
+                mask[nearest] = True
+            signal = self.signal[:, mask].mean(axis=1)
+        else:
+            signal = self.signal[:, nearest]
+
+        return Signal2D(
+            detector_name=f"{self.detector_name} {used:g} {self.wavelength_unit}",
+            time=self.time,
+            time_unit=self.time_unit,
+            signal=signal,
+            signal_unit=self.signal_unit,
+            filename=self.filename,
+            additional_data={
+                **self.additional_data,
+                "wavelength": used,
+                "bandwidth": bandwidth,
+            },
+        )
+
+    def at_wavelengths(
+        self,
+        wavelengths: list[float],
+        bandwidth: float = 0.0,
+    ) -> SignalStack2D:
+        """Extract several 2D traces at once, stacked for overlay."""
+        from hplc.models.signal_stack import SignalStack2D  # avoid circular import
+
+        if len(wavelengths) == 0:
+            raise ValueError("Must request at least one wavelength")
+        return SignalStack2D(
+            [self.at_wavelength(wl, bandwidth=bandwidth) for wl in wavelengths]
+        )
+
+    def max_plot(self) -> Signal2D:
+        """The maximum absorbance across all wavelengths at each time point."""
+        return Signal2D(
+            detector_name=f"{self.detector_name} max plot",
+            time=self.time,
+            time_unit=self.time_unit,
+            signal=self.signal.max(axis=1),
+            signal_unit=self.signal_unit,
+            filename=self.filename,
+            additional_data=dict(self.additional_data),
+        )
