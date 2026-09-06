@@ -3,7 +3,7 @@ from __future__ import annotations
 import plotly.graph_objects as go
 import numpy as np
 
-from hplc.graphing.graph_models import TraceProperties2D
+from hplc.graphing.graph_models import TraceProperties2D, TraceProperties3D
 
 
 PALETTE = [
@@ -221,6 +221,148 @@ def plot_2d_graph(
             margin=dict(l=55, r=20, t=40, b=45),
             showlegend=n > 1 or any(s.fills for s in signals),
             hovermode="x unified",
+        )
+
+        if filename:
+            scale = dpi / 96
+            fig.write_image(filename, scale=scale)
+
+        fig.show()
+
+    return fig
+
+
+DEFAULT_COLORSCALE = [
+    "#FFFFFF", "#D9E3F0", "#8FB8DE", "#4C78A8", "#2A4C74", "#12263C",
+]
+
+
+def _resolve_colorscale(s: TraceProperties3D):
+    """Return (colorscale, cmin, cmax) from absolute colour stops.
+
+    Positions are normalised onto 0..1 for plotly, while cmin/cmax carry the
+    absolute values so the mapping stays anchored to real signal units.
+    """
+    if s.colors is None:
+        return DEFAULT_COLORSCALE, None, None
+
+    values = np.asarray(s.color_values, dtype=float)
+    lo, hi = float(values[0]), float(values[-1])
+    span = hi - lo
+    if span == 0:
+        positions = np.linspace(0.0, 1.0, len(s.colors))
+    else:
+        positions = (values - lo) / span
+    return [[float(p), c] for p, c in zip(positions, s.colors)], lo, hi
+
+
+def plot_3d_graph(
+    signal: TraceProperties3D,
+    title: str = "",
+    width: int = 520,
+    height: int = 340,
+    filename: str | None = None,
+    dpi: int = 300,
+    x_min: float | None = None,
+    x_max: float | None = None,
+    y_min: float | None = None,
+    y_max: float | None = None,
+    z_min: float | None = None,
+    z_max: float | None = None,
+    fig: go.Figure | None = None,
+    row: int | None = None,
+    col: int | None = None,
+) -> go.Figure:
+    """Core 3D (time x wavelength x intensity) renderer. Draws pre-computed data only."""
+    if signal is None:
+        raise ValueError("No signal to plot")
+
+    s = signal
+    standalone = fig is None
+    if standalone:
+        fig = go.Figure()
+
+    trace_kwargs = {}
+    if row is not None and col is not None:
+        trace_kwargs = {"row": row, "col": col}
+
+    colorscale, scale_min, scale_max = _resolve_colorscale(s)
+    zmin = z_min if z_min is not None else scale_min
+    zmax = z_max if z_max is not None else scale_max
+
+    fig.add_trace(
+        go.Heatmap(
+            x=np.asarray(s.time, dtype=float),
+            y=np.asarray(s.wavelengths, dtype=float),
+            # z is indexed (y, x) by plotly; our signal is (time, wavelength)
+            z=np.asarray(s.signal, dtype=float).T,
+            colorscale=colorscale,
+            zmin=zmin,
+            zmax=zmax,
+            name=s.name,
+            colorbar=dict(
+                title=dict(text=s.signal_unit, font=dict(size=11)),
+                tickfont=dict(size=10),
+            ),
+            hovertemplate=(
+                f"<b>{s.name}</b><br>"
+                f"Time: %{{x:.3f}} {s.time_unit}<br>"
+                f"Wavelength: %{{y:.2f}} {s.wavelength_unit}<br>"
+                f"Signal: %{{z:.2f}} {s.signal_unit}"
+                "<extra></extra>"
+            ),
+        ),
+        **trace_kwargs,
+    )
+
+    if standalone:
+        display_title = title or s.name
+        xaxis_opts = dict(
+            title=dict(text=f"Time ({s.time_unit})", font=dict(size=11)),
+            tickfont=dict(size=10),
+            showgrid=False,
+            zeroline=False,
+            linecolor="#ccc",
+            linewidth=1,
+        )
+        yaxis_opts = dict(
+            title=dict(text=f"Wavelength ({s.wavelength_unit})", font=dict(size=11)),
+            tickfont=dict(size=10),
+            showgrid=False,
+            zeroline=False,
+            linecolor="#ccc",
+            linewidth=1,
+        )
+
+        time = np.asarray(s.time, dtype=float)
+        wavelengths = np.asarray(s.wavelengths, dtype=float)
+
+        if x_min is not None or x_max is not None:
+            xaxis_opts["range"] = [
+                x_min if x_min is not None else float(time.min()),
+                x_max if x_max is not None else float(time.max()),
+            ]
+
+        if y_min is not None or y_max is not None:
+            yaxis_opts["range"] = [
+                y_min if y_min is not None else float(wavelengths.min()),
+                y_max if y_max is not None else float(wavelengths.max()),
+            ]
+
+        fig.update_layout(
+            title=dict(
+                text=display_title,
+                font=dict(size=14, color="#2c3e50"),
+                x=0.5,
+            ),
+            xaxis=xaxis_opts,
+            yaxis=yaxis_opts,
+            plot_bgcolor="white",
+            paper_bgcolor="white",
+            width=width,
+            height=height,
+            margin=dict(l=55, r=20, t=40, b=45),
+            showlegend=False,
         )
 
         if filename:

@@ -1,9 +1,10 @@
 """
 Visual demos for plotting functions. Call from a REPL or notebook to eyeball output.
 
-    from hplc.testing.demo import demo_plot_signal_2d, demo_plot_multi_graph
+    from hplc.testing.demo import demo_plot_signal_2d, demo_plot_multi_graph, demo_plot_signal_3d
     demo_plot_signal_2d()
     demo_plot_multi_graph()
+    demo_plot_signal_3d()
 """
 
 from __future__ import annotations
@@ -12,8 +13,8 @@ import numpy as np
 from scipy.special import erf
 
 from hplc.testing.mock_generators import make_raw_signal
-from hplc.graphing.graph_models import TraceProperties2D, FillRegion, GraphProperties2D
-from hplc.graphing import plot_2d_graph, plot_graphs
+from hplc.graphing.graph_models import TraceProperties2D, TraceProperties3D, FillRegion, GraphProperties2D
+from hplc.graphing import plot_2d_graph, plot_3d_graph, plot_graphs
 
 
 DEMO_PEAKS_190 = [
@@ -138,4 +139,105 @@ def demo_plot_multi_graph(
         subplot_height=340,
         style=style,
         filename=filename,
+    )
+
+
+# Each analyte: a chromatographic peak in time x a UV absorption band in wavelength.
+DEMO_ANALYTES_3D = [
+    # rt (s), chromatographic sigma/skew, lambda_max (nm), band width (nm), strength
+    {"name": "pNPS",     "mu": 120, "sigma": 10, "alpha": 1.0, "lmax": 300, "bw": 34, "amp": 900},
+    {"name": "pNP",      "mu": 250, "sigma": 14, "alpha": 2.5, "lmax": 400, "bw": 44, "amp": 1400},
+    {"name": "impurity", "mu": 330, "sigma": 8,  "alpha": 0.4, "lmax": 254, "bw": 22, "amp": 450},
+    {"name": "late tail","mu": 470, "sigma": 26, "alpha": 6.0, "lmax": 228, "bw": 30, "amp": 700},
+]
+
+
+def _make_pda_cube(
+    duration: float = 600.0,
+    dt: float = 1.0,
+    wl_min: float = 190.0,
+    wl_max: float = 600.0,
+    wl_step: float = 2.0,
+    noise_scale: float = 4.0,
+    seed: int = 7,
+):
+    """Build a synthetic (time x wavelength) PDA cube.
+
+    Returns (time, wavelengths, signal) with signal.shape == (len(time), len(wavelengths)).
+    """
+    rng = np.random.default_rng(seed)
+    time = np.arange(0, duration, dt, dtype=float)
+    wavelengths = np.arange(wl_min, wl_max + wl_step, wl_step, dtype=float)
+
+    signal = rng.normal(0.0, noise_scale, size=(len(time), len(wavelengths)))
+
+    # Solvent absorbs hard at low wavelength — a standing ridge down the 190 nm edge.
+    signal += 260.0 * np.exp(-(wavelengths[None, :] - 190.0) / 26.0)
+
+    for a in DEMO_ANALYTES_3D:
+        chrom = _skew_normal_curve(time, a["mu"], a["amp"], a["sigma"], a["alpha"])
+        spectrum = np.exp(-0.5 * ((wavelengths - a["lmax"]) / a["bw"]) ** 2)
+        signal += np.outer(chrom, spectrum)
+
+    return time, wavelengths, signal
+
+
+def _default_trace_3d(name: str = "PDA 190-600 nm") -> TraceProperties3D:
+    time, wavelengths, signal = _make_pda_cube()
+    return TraceProperties3D(
+        name=name,
+        time=time,
+        time_unit="s",
+        wavelengths=wavelengths,
+        wavelength_unit="nm",
+        signal=signal,
+        signal_unit="mAU",
+        # Absolute colour stops, in mAU — not normalised, so the mapping is
+        # comparable between runs.
+        colors=["#FFFFFF", "#D9E3F0", "#8FB8DE", "#4C78A8", "#E45756", "#7A1416"],
+        color_values=np.array([0.0, 20.0, 60.0, 140.0, 260.0, 420.0]),
+    )
+
+
+def demo_plot_signal_3d(
+    signal: TraceProperties3D | None = None,
+    title: str = "Demo: plot_3d_graph",
+    width: int = 900,
+    height: int = 560,
+    filename: str | None = None,
+    dpi: int = 300,
+    x_min: float | None = None,
+    x_max: float | None = None,
+    y_min: float | None = None,
+    y_max: float | None = None,
+    z_min: float | None = None,
+    z_max: float | None = None,
+):
+    """
+    Visual demo for plot_3d_graph. Call from a REPL or notebook:
+
+        from hplc.testing.demo import demo_plot_signal_3d
+        demo_plot_signal_3d()
+
+        # zoom in on the pNP band
+        demo_plot_signal_3d(x_min=200, x_max=320, y_min=340, y_max=460)
+
+        # clip the colour scale to bring the small impurity out
+        demo_plot_signal_3d(z_max=120)
+
+    Returns the go.Figure so you can keep poking at it.
+    """
+    return plot_3d_graph(
+        signal=signal if signal is not None else _default_trace_3d(),
+        title=title,
+        width=width,
+        height=height,
+        filename=filename,
+        dpi=dpi,
+        x_min=x_min,
+        x_max=x_max,
+        y_min=y_min,
+        y_max=y_max,
+        z_min=z_min,
+        z_max=z_max,
     )
