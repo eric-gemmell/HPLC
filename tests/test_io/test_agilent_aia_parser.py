@@ -8,7 +8,7 @@ example_agilent_filename = "tests/example_chromatograms/example_agilent_aia_chro
 desired_filename = example_agilent_filename.split("/")[-1]
 example_agilent_filename_modified_1 = "tests/example_chromatograms/example_agilent_aia_chromatogram"
 example_agilent_filename_modified_2 = "tests/example_chromatograms/example_agilent_aia_chromatogram.aia/"
-example_shimadzu_filename = "tests/example_chromatograms/example_shimadzu_chromatogram.lcd"
+example_shimadzu_filename = "tests/example_chromatograms/example_shimadzu_chromatogram_3d.lcd"
 example_ez_chrom_filename = "tests/example_chromatograms/example_ez_chrom_chromatogram.dat"
 example_agilent_d_filename = "tests/example_chromatograms/example_agilent_d_chromatogram.D"
 

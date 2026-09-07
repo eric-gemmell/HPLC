@@ -5,7 +5,7 @@ from hplc.io import parse_ezchrom, is_ezchrom_file
 from hplc.models import Chromatogram, Signal2D
 
 example_ezchrom_filename = "tests/example_chromatograms/example_ez_chrom_chromatogram.dat"
-example_shimadzu_filename = "tests/example_chromatograms/example_shimadzu_chromatogram.lcd"
+example_shimadzu_filename = "tests/example_chromatograms/example_shimadzu_chromatogram_3d.lcd"
 
 EXPECTED_SIGNALS = {
     "UV-Detektor S 2600: 200 nm",

@@ -5,7 +5,7 @@ from hplc.models import Chromatogram
 example_ezchrom_filename = "tests/example_chromatograms/example_ez_chrom_chromatogram.dat"
 example_agilent_d_filename = "tests/example_chromatograms/example_agilent_d_chromatogram.D"
 example_agilent_aia_filename = "tests/example_chromatograms/example_agilent_aia_chromatogram.aia"
-example_shimadzu_filename = "tests/example_chromatograms/example_shimadzu_chromatogram.lcd"
+example_shimadzu_filename = "tests/example_chromatograms/example_shimadzu_chromatogram_3d.lcd"
 
 
 @pytest.fixture(scope="module")
@@ -33,9 +33,9 @@ def test_load_agilent_d_chromatogram_returns_chromatogram(agilent_d_chrom):
 def test_load_agilent_aia_chromatogram_returns_chromatogram(agilent_aia_chrom):
     assert isinstance(agilent_aia_chrom, Chromatogram)
 
-# def test_load_shimadzu_returns_chromatogram():
-#     chrom = load(example_shimadzu_filename)
-#     assert isinstance(chrom, Chromatogram)
+def test_load_shimadzu_returns_chromatogram():
+    chrom = load(example_shimadzu_filename)
+    assert isinstance(chrom, Chromatogram)
 
 def test_load_unknown_format_raises():
     with pytest.raises(ValueError):

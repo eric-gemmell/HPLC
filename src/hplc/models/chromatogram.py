@@ -83,13 +83,7 @@ class Chromatogram:
         bandwidth: float = 0.0,
         detector: str | None = None,
     ) -> Chromatogram:
-        """Extract 2D traces at one or more wavelengths from a 3D signal.
 
-        Returns a new Chromatogram carrying the original signals plus one
-        Signal2D per requested wavelength, keyed by its detector name
-        (e.g. "PDA 254 nm"). Raises if the chromatogram has no 3D signal,
-        if the detector is ambiguous, or if a wavelength was not measured.
-        """
         source = self._select_3d_signal(detector)
 
         if isinstance(wavelengths, (int, float, np.number)):
