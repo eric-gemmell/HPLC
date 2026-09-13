@@ -401,12 +401,12 @@ def test_display_stacked_uses_optional_parameters(mock_plot, rich_chrom):
 # ---------------------------------------------------------------------------
 
 def test_detect_peaks_returns_chromatogram(chrom):
-    result = chrom.detect_peaks()
+    result = chrom.detect_peaks([])
     assert isinstance(result, Chromatogram)
 
 
 def test_detect_peaks_returns_copy(chrom):
-    result = chrom.detect_peaks()
+    result = chrom.detect_peaks([])
     assert result is not chrom
     for name in chrom.signals:
         assert result.signals[name] is not chrom.signals[name]
@@ -414,6 +414,173 @@ def test_detect_peaks_returns_copy(chrom):
 
 def test_detect_peaks_calls_signal_detect_peaks_once_per_signal(chrom):
     with patch.object(Signal2D, "detect_peaks", return_value=chrom.signals["UV"]) as mock:
-        chrom.detect_peaks()
+        chrom.detect_peaks([(1.0, 3.0)])
         assert mock.call_count == len(chrom.signals)
 
+
+
+# ---------------------------------------------------------------------------
+# Manual peak definition — define_peak_by_bounds
+# ---------------------------------------------------------------------------
+
+from hplc.testing.mock_generators import make_signal3d
+
+MANUAL_START = 100.0
+MANUAL_END = 160.0
+
+
+@pytest.fixture
+def mixed_chrom():
+    """Two 2D signals plus a 3D signal, which has no peak concept."""
+    return Chromatogram(
+        signals={
+            "UV 254": make_signal2d(
+                peaks=[{"mu": 130, "amplitude": 500, "sigma": 10, "alpha": 0.0}],
+                detector_name="UV 254", duration=400, dt=1, noise_scale=0.1,
+            ),
+            "UV 280": make_signal2d(
+                peaks=[{"mu": 130, "amplitude": 300, "sigma": 10, "alpha": 0.0}],
+                detector_name="UV 280", duration=400, dt=1, noise_scale=0.1,
+            ),
+            "PDA": make_signal3d(
+                analytes=[{"mu": 130, "amplitude": 500, "sigma": 10, "alpha": 0.0,
+                           "lmax": 254.0, "band": 30.0}],
+                duration=400, dt=1,
+            ),
+        },
+        filename="mixed_sample.dat",
+    )
+
+
+def test_define_peak_by_bounds_called_for_every_2d_signal(mixed_chrom):
+    two_d = [s for s in mixed_chrom.signals.values() if isinstance(s, Signal2D)]
+
+    with patch.object(
+        Signal2D, "define_peak_by_bounds", return_value=two_d[0]
+    ) as mock:
+        result = mixed_chrom.define_peak_by_bounds(MANUAL_START, MANUAL_END)
+
+    assert isinstance(result, Chromatogram)
+    assert mock.call_count == len(two_d)
+    for call in mock.call_args_list:
+        assert call.args == (MANUAL_START, MANUAL_END)
+
+
+# ---------------------------------------------------------------------------
+# Exporting peaks
+# ---------------------------------------------------------------------------
+
+def test_export_peaks_returns_dict_keyed_by_signal_name(mixed_chrom):
+    two_d = {
+        name: sig
+        for name, sig in mixed_chrom.signals.items()
+        if isinstance(sig, Signal2D)
+    }
+
+    exported = mixed_chrom.export_peaks()
+
+    assert isinstance(exported, dict)
+    assert set(exported) == set(two_d)
+    for name, sig in two_d.items():
+        assert exported[name] == sig.export_peaks()
+
+
+def test_export_peaks_calls_export_on_every_2d_signal(mixed_chrom):
+    two_d = [s for s in mixed_chrom.signals.values() if isinstance(s, Signal2D)]
+    sentinel = [{"retention_time": 1.0, "area": 2.0, "start_time": 0.0,
+                 "end_time": 3.0, "compound": None}]
+
+    with patch.object(Signal2D, "export_peaks", return_value=sentinel) as mock:
+        exported = mixed_chrom.export_peaks()
+
+    assert mock.call_count == len(two_d)
+    assert list(exported.values()) == [sentinel] * len(two_d)
+
+
+# ---------------------------------------------------------------------------
+# Baseline
+# ---------------------------------------------------------------------------
+
+def test_compute_baseline_called_for_every_2d_signal(mixed_chrom):
+    two_d = [s for s in mixed_chrom.signals.values() if isinstance(s, Signal2D)]
+
+    with patch.object(
+        Signal2D, "compute_baseline", return_value=two_d[0]
+    ) as mock:
+        result = mixed_chrom.compute_baseline()
+
+    assert isinstance(result, Chromatogram)
+    assert mock.call_count == len(two_d)
+
+
+def test_compute_baseline_forwards_every_parameter_to_each_signal(mixed_chrom):
+    """Parameters pass straight through to each signal, so the chromatogram
+    never needs to know what compute_baseline accepts."""
+    two_d = [s for s in mixed_chrom.signals.values() if isinstance(s, Signal2D)]
+
+    with patch.object(
+        Signal2D, "compute_baseline", return_value=two_d[0]
+    ) as mock:
+        mixed_chrom.compute_baseline(lam=1e5, window=30, method="mor")
+
+    assert mock.call_count == len(two_d)
+    for call in mock.call_args_list:
+        assert call.kwargs["lam"] == 1e5
+        assert call.kwargs["window"] == 30
+        assert call.kwargs["method"] == "mor"
+
+
+def test_compute_baseline_supplies_no_parameters_of_its_own(mixed_chrom):
+    two_d = [s for s in mixed_chrom.signals.values() if isinstance(s, Signal2D)]
+
+    with patch.object(
+        Signal2D, "compute_baseline", return_value=two_d[0]
+    ) as mock:
+        mixed_chrom.compute_baseline()
+
+    for call in mock.call_args_list:
+        assert call.kwargs == {}
+
+
+# ---------------------------------------------------------------------------
+# Constrained peak detection — detect_peaks(peak_retention_times)
+# ---------------------------------------------------------------------------
+
+CHROM_DETECT_WINDOWS = [(80.0, 120.0), (230.0, 270.0)]
+
+
+def test_chromatogram_detect_peaks_forwards_windows_to_every_signal(chrom):
+    """Every 2D signal is asked to detect peaks, each with the caller's
+    retention-time windows passed through untouched."""
+    with patch.object(
+        Signal2D, "detect_peaks", return_value=chrom.signals["UV"]
+    ) as mock:
+        chrom.detect_peaks(CHROM_DETECT_WINDOWS)
+
+    assert mock.call_count == len(chrom.signals)
+    for call in mock.call_args_list:
+        assert call.args[0] == CHROM_DETECT_WINDOWS
+
+
+def test_chromatogram_detect_peaks_returns_a_copy_carrying_the_detected_peaks(chrom):
+    """Detection returns a new Chromatogram whose signals are the ones
+    detect_peaks handed back — the original chromatogram is untouched."""
+    detected = {
+        name: sig.define_peak_by_bounds(1.0, 3.0)
+        for name, sig in chrom.signals.items()
+    }
+
+    with patch.object(
+        Signal2D, "detect_peaks", side_effect=lambda *a, **k: detected["UV"]
+    ):
+        result = chrom.detect_peaks(CHROM_DETECT_WINDOWS)
+
+    assert isinstance(result, Chromatogram)
+    assert result is not chrom
+    assert set(result.signals) == set(chrom.signals)
+
+    for name in chrom.signals:
+        assert result.signals[name] is not chrom.signals[name]
+        assert result.signals[name].peaks == detected["UV"].peaks
+        # The original's signals never gained peaks.
+        assert chrom.signals[name].peaks == []

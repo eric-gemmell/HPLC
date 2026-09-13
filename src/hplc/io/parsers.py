@@ -68,6 +68,9 @@ def parse_ezchrom(filepath: str) -> Chromatogram:
     from pathlib import Path
     chrom_filename = Path(filepath).name
     sample_name = header["sample_name"]
+    # EZChrom's own file names are long and unwieldy, so the chromatogram is
+    # named after the sample. The full path stays in additional_data.
+    chrom_name = sample_name or chrom_filename
 
     signals = {
         trace["name"]: Signal2D(
@@ -76,7 +79,7 @@ def parse_ezchrom(filepath: str) -> Chromatogram:
             detector_name=trace["name"],
             time_unit=trace["time_unit"],
             signal_unit=trace["unit"],
-            filename=chrom_filename,
+            filename=chrom_name,
             additional_data={
                 "detector_id": trace["detector_id"],
                 "scale_factor": trace["scale_factor"],
@@ -99,7 +102,7 @@ def parse_ezchrom(filepath: str) -> Chromatogram:
 
     return Chromatogram(
         signals=signals,
-        filename=chrom_filename,
+        filename=chrom_name,
         additional_data=additional_data,
     )
 

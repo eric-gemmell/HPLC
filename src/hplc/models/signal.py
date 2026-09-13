@@ -6,7 +6,8 @@ import numpy as np
 import copy
 from hplc.graphing import plot_2d_graph, plot_3d_graph
 from hplc.graphing.graph_models import TraceProperties2D, TraceProperties3D
-from hplc.models.peak import Peak, Peak2D
+from hplc.models.peak import AreaPeak2D, Peak, Peak2D
+from hplc.analysis.baseline import compute_baseline
 from hplc.analysis.peak_detection import detect_peaks
  
 class Signal(ABC):
@@ -43,8 +44,6 @@ class Signal(ABC):
         self._peaks_detected: bool = bool(peaks)
  
     def __len__(self) -> int:
-        if self._peaks_detected:
-            return len(self.peaks)
         return len(self.time)
 
     def __iter__(self):
@@ -97,26 +96,68 @@ class Signal2D(Signal):
         self.baseline = np.asarray(baseline, dtype=float) if baseline is not None else None
         self.peaks: list[Peak2D] = peaks or []
  
-    def detect_peaks(self) -> Signal2D:
+    def detect_peaks(self, peak_retention_times: list[tuple[float, float]]) -> Signal2D:
+        """Fit a peak inside each of the given (start, end) retention-time windows.
+
+        The analysis layer sees the baseline-corrected signal, so the fitted
+        peak shapes describe the peaks themselves rather than the drift
+        underneath them. Returns a copy carrying the detected peaks.
+        """
         result = self._copy()
-        raw_peaks = detect_peaks(self.time, self.signal)
-        result.peaks = [
-            Peak2D(
-                retention_time=p["retention_time"],
-                max_height=p["max_height"],
-                area=p["area"],
-                start_time=p["start_time"],
-                end_time=p["end_time"],
-                unit=self.signal_unit,
-                mu=p.get("mu"),
-                amplitude=p.get("amplitude"),
-                sigma=p.get("sigma"),
-                alpha=p.get("alpha"),
+        corrected = (
+            self.signal - self.baseline if self.baseline is not None else self.signal
+        )
+        peaks = detect_peaks(self.time, corrected, peak_retention_times)
+
+        if result.baseline is not None:
+            # Sit the fitted curves back on top of the baseline for plotting.
+            for peak in peaks:
+                peak.recalculate(baseline=result.baseline)
+
+        result.peaks = [*result.peaks, *peaks]
+        result._peaks_detected = True
+        return result
+
+    def compute_baseline(self, **kwargs) -> Signal2D:
+        """Estimate this signal's baseline over the whole trace.
+
+        Any keyword arguments are handed to the analysis layer's
+        compute_baseline untouched, so it can grow parameters without the
+        models needing to know about them. Returns a copy carrying the
+        computed baseline.
+        """
+        result = self._copy()
+        result.baseline = compute_baseline(self.time, self.signal, **kwargs)
+        return result
+
+    def define_peak_by_bounds(self, start_time: float, end_time: float) -> Signal2D:
+        if end_time <= start_time:
+            raise ValueError(
+                f"end_time ({end_time}) must be greater than start_time ({start_time})"
             )
-            for p in raw_peaks
+        if not ((self.time >= start_time) & (self.time <= end_time)).any():
+            raise ValueError(
+                f"No data points between {start_time} and {end_time} {self.time_unit}; "
+                f"signal spans {self.time[0]:g}-{self.time[-1]:g} {self.time_unit}"
+            )
+
+        result = self._copy()
+        result.peaks = [
+            *result.peaks,
+            AreaPeak2D(
+                start_time=start_time,
+                end_time=end_time,
+                time=result.time,
+                signal=result.signal,
+                baseline=result.baseline,
+            ),
         ]
         result._peaks_detected = True
         return result
+
+    def export_peaks(self) -> list[dict]:
+        """Every peak on this signal as a list of plain dicts."""
+        return [peak.export() for peak in self.peaks]
 
     def to_trace_properties(self) -> TraceProperties2D:
         fills = [p.to_fill_region() for p in self.peaks]

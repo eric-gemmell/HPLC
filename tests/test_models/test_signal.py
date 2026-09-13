@@ -9,7 +9,6 @@ from hplc.models.peak import MathPeak2D
 from hplc.models import Signal2D
 from hplc.testing.mock_generators import make_raw_signal, make_signal2d, expected_peak_properties
 from hplc.analysis.peak_detection import detect_peaks
-from tests.test_models.test_peak import BACKGROUND, BACKGROUND, PEAK_DEF
 
 
 @pytest.fixture
@@ -176,13 +175,13 @@ def test_signal_has_optional_peaks_attribute(sig: Signal2D):
 
 def test_detect_peaks_returns_signal2d():
     signal = make_signal2d([], duration=20)
-    result = signal.detect_peaks()
+    result = signal.detect_peaks([])
     assert isinstance(result, Signal2D)
 
 
 def test_detect_peaks_returns_copy():
     signal = make_signal2d([], duration=20)
-    result = signal.detect_peaks()
+    result = signal.detect_peaks([])
     assert result is not signal
 
 
@@ -200,7 +199,7 @@ def test_detect_peaks_calls_detect_peaks_once():
     )
 
     with patch("hplc.models.signal.detect_peaks", return_value=[]) as mock_fp:
-        sig.detect_peaks()
+        sig.detect_peaks([(1.0, 3.0)])
         mock_fp.assert_called_once()
 
 # def test_detect_peaks_assigns_peaks_to_result():
@@ -256,3 +255,279 @@ def test_signal_has_stack_method():
     stack = sig.stack(sig2)
     assert stack.signals[0].filename is sig.filename
     assert stack.signals[1].filename is sig2.filename
+
+# ---------------------------------------------------------------------------
+# Manual peak definition — define_peak_by_bounds
+# ---------------------------------------------------------------------------
+
+MANUAL_PEAK_DEF = {"mu": 200, "amplitude": 100, "sigma": 12, "alpha": 0.0}
+
+MANUAL_TIME, MANUAL_PEAK_SIGNAL = make_raw_signal(
+    [MANUAL_PEAK_DEF], duration=400, dt=0.1, noise_scale=0.0
+)
+_, MANUAL_BASELINE = make_raw_signal([], duration=400, dt=0.1, noise_scale=0.1)
+MANUAL_SIGNAL = MANUAL_PEAK_SIGNAL + MANUAL_BASELINE
+
+MANUAL_PROPS = expected_peak_properties([MANUAL_PEAK_DEF])[0]
+MANUAL_START = MANUAL_PROPS["start_time"]
+MANUAL_END = MANUAL_PROPS["end_time"]
+
+
+@pytest.fixture
+def manual_sig():
+    return Signal2D(
+        filename="test_signal",
+        detector_name="UV",
+        time=MANUAL_TIME,
+        time_unit="s",
+        signal=MANUAL_SIGNAL,
+        signal_unit="mAU",
+        baseline=MANUAL_BASELINE,
+    )
+
+
+def test_define_peak_by_bounds(manual_sig: Signal2D):
+    result = manual_sig.define_peak_by_bounds(MANUAL_START, MANUAL_END)
+
+    assert isinstance(result, Signal2D)
+    assert len(result.peaks) == 1
+    peak = result.peaks[0]
+
+    # Bounds are exactly what was supplied, in the signal's time unit.
+    assert peak.start_time == pytest.approx(MANUAL_START)
+    assert peak.end_time == pytest.approx(MANUAL_END)
+
+    # An area is computed (correctness is Peak2D's concern, not this method's).
+    assert peak.area is not None
+
+    # The peak reads from the signal's own signal and baseline arrays.
+    mask = (MANUAL_TIME >= MANUAL_START) & (MANUAL_TIME <= MANUAL_END)
+    fill = peak.to_fill_region()
+    np.testing.assert_array_equal(fill.time, MANUAL_TIME[mask])
+    np.testing.assert_array_equal(fill.upper, MANUAL_SIGNAL[mask])
+    np.testing.assert_array_equal(fill.lower, MANUAL_BASELINE[mask])
+
+
+# ---------------------------------------------------------------------------
+# Exporting peaks
+# ---------------------------------------------------------------------------
+
+EXPORT_PEAK_DEFS = [
+    {"mu": 100, "amplitude": 100, "sigma": 8, "alpha": 0.0},
+    {"mu": 250, "amplitude": 60, "sigma": 10, "alpha": 0.0},
+]
+
+EXPORT_TIME, EXPORT_PEAK_SIGNAL = make_raw_signal(
+    EXPORT_PEAK_DEFS, duration=400, dt=0.1, noise_scale=0.0
+)
+_, EXPORT_BASELINE = make_raw_signal([], duration=400, dt=0.1, noise_scale=0.1)
+EXPORT_SIGNAL = EXPORT_PEAK_SIGNAL + EXPORT_BASELINE
+
+EXPORT_PROPS = expected_peak_properties(EXPORT_PEAK_DEFS)
+EXPORT_KEYS = {"retention_time", "area", "start_time", "end_time", "compound"}
+
+
+@pytest.fixture
+def sig_with_two_peaks():
+    signal = Signal2D(
+        filename="test_signal",
+        detector_name="UV",
+        time=EXPORT_TIME,
+        time_unit="s",
+        signal=EXPORT_SIGNAL,
+        signal_unit="mAU",
+        baseline=EXPORT_BASELINE,
+    )
+    for props in EXPORT_PROPS:
+        signal = signal.define_peak_by_bounds(props["start_time"], props["end_time"])
+    return signal
+
+
+def test_export_peaks_returns_one_entry_per_peak(sig_with_two_peaks: Signal2D):
+    exported = sig_with_two_peaks.export_peaks()
+
+    assert isinstance(exported, list)
+    assert len(exported) == len(EXPORT_PEAK_DEFS)
+
+    for entry, props in zip(exported, EXPORT_PROPS):
+        assert set(entry) == EXPORT_KEYS
+        assert entry["start_time"] == pytest.approx(props["start_time"])
+        assert entry["end_time"] == pytest.approx(props["end_time"])
+        assert entry["area"] is not None
+        assert entry["retention_time"] == pytest.approx(props["retention_time"], rel=1e-2)
+        assert entry["compound"] is None
+
+
+def test_export_peaks_matches_each_peaks_own_export(sig_with_two_peaks: Signal2D):
+    exported = sig_with_two_peaks.export_peaks()
+    assert exported == [p.export() for p in sig_with_two_peaks.peaks]
+
+
+def test_export_peaks_is_empty_without_peaks(manual_sig: Signal2D):
+    assert manual_sig.export_peaks() == []
+
+
+# ---------------------------------------------------------------------------
+# Baseline
+# ---------------------------------------------------------------------------
+
+BASELINE_TIME, BASELINE_SIGNAL = make_raw_signal(
+    [{"mu": 200, "amplitude": 100, "sigma": 12, "alpha": 0.0}],
+    duration=400, dt=0.1, noise_scale=1.0,
+)
+FAKE_BASELINE = np.full_like(BASELINE_SIGNAL, 7.0)
+
+
+@pytest.fixture
+def sig_without_baseline():
+    return Signal2D(
+        filename="test_signal",
+        detector_name="UV",
+        time=BASELINE_TIME,
+        time_unit="s",
+        signal=BASELINE_SIGNAL,
+        signal_unit="mAU",
+    )
+
+
+def test_signal_has_compute_baseline(sig_without_baseline: Signal2D):
+    with patch(
+        "hplc.models.signal.compute_baseline", return_value=FAKE_BASELINE
+    ) as mock:
+        result = sig_without_baseline.compute_baseline()
+
+    mock.assert_called_once()
+
+    # The signal's baseline is whatever compute_baseline returned.
+    np.testing.assert_array_equal(result.baseline, FAKE_BASELINE)
+
+    # ...and the original is left untouched.
+    assert result is not sig_without_baseline
+    assert sig_without_baseline.baseline is None
+
+
+def test_signal_compute_baseline_passes_time_and_signal(sig_without_baseline: Signal2D):
+    with patch(
+        "hplc.models.signal.compute_baseline", return_value=FAKE_BASELINE
+    ) as mock:
+        sig_without_baseline.compute_baseline()
+
+    time, signal = mock.call_args.args
+    np.testing.assert_array_equal(time, sig_without_baseline.time)
+    np.testing.assert_array_equal(signal, sig_without_baseline.signal)
+
+
+def test_signal_compute_baseline_forwards_every_parameter(sig_without_baseline: Signal2D):
+    """Whatever the caller supplies reaches the analysis layer untouched, so
+    compute_baseline is free to grow parameters without changing the models."""
+    with patch(
+        "hplc.models.signal.compute_baseline", return_value=FAKE_BASELINE
+    ) as mock:
+        sig_without_baseline.compute_baseline(
+            lam=1e5, window=30, method="mor", anything_at_all=object()
+        )
+
+    assert mock.call_args.kwargs["lam"] == 1e5
+    assert mock.call_args.kwargs["window"] == 30
+    assert mock.call_args.kwargs["method"] == "mor"
+    assert "anything_at_all" in mock.call_args.kwargs
+
+
+def test_signal_compute_baseline_supplies_no_parameters_of_its_own(
+    sig_without_baseline: Signal2D,
+):
+    """Calling it bare must not invent defaults — those belong to the
+    analysis layer, not the model."""
+    with patch(
+        "hplc.models.signal.compute_baseline", return_value=FAKE_BASELINE
+    ) as mock:
+        sig_without_baseline.compute_baseline()
+
+    assert mock.call_args.kwargs == {}
+
+
+# ---------------------------------------------------------------------------
+# Constrained peak detection — detect_peaks(peak_retention_times)
+# ---------------------------------------------------------------------------
+
+DETECT_WINDOWS = [(80.0, 120.0), (230.0, 270.0)]
+
+
+@pytest.fixture
+def sig_with_baseline():
+    return Signal2D(
+        filename="test_signal",
+        detector_name="UV",
+        time=BASELINE_TIME,
+        time_unit="s",
+        signal=BASELINE_SIGNAL,
+        signal_unit="mAU",
+        baseline=FAKE_BASELINE,
+    )
+
+
+def test_signal_detect_peaks_passes_windows_and_baseline_corrected_signal(
+    sig_with_baseline: Signal2D,
+):
+    """Signal2D.detect_peaks takes the caller's retention-time windows and
+    hands the analysis layer the signal with its baseline already removed."""
+    with patch("hplc.models.signal.detect_peaks", return_value=[]) as mock:
+        sig_with_baseline.detect_peaks(DETECT_WINDOWS)
+
+    mock.assert_called_once()
+
+    time, signal, peak_retention_times = mock.call_args.args
+    np.testing.assert_array_equal(time, sig_with_baseline.time)
+    np.testing.assert_allclose(
+        signal, sig_with_baseline.signal - sig_with_baseline.baseline
+    )
+    assert peak_retention_times == DETECT_WINDOWS
+
+
+@pytest.fixture
+def sig_with_existing_peak():
+    """A signal already carrying one manually defined peak."""
+    signal = Signal2D(
+        filename="test_signal",
+        detector_name="UV",
+        time=BASELINE_TIME,
+        time_unit="s",
+        signal=BASELINE_SIGNAL,
+        signal_unit="mAU",
+    )
+    return signal.define_peak_by_bounds(300.0, 340.0)
+
+
+def _stub_detected_peaks(n=2):
+    return [
+        MathPeak2D(
+            mu=100.0 + 150.0 * i,
+            amplitude=50.0,
+            sigma=10.0,
+            alpha=0.0,
+            time=BASELINE_TIME,
+        )
+        for i in range(n)
+    ]
+
+
+def test_signal_detect_peaks_returns_a_copy_carrying_the_detected_peaks(
+    sig_with_existing_peak: Signal2D,
+):
+    """The detected peaks land on a copy, appended to whatever the signal
+    already carried — the original is left untouched."""
+    stubs = _stub_detected_peaks()
+    existing = list(sig_with_existing_peak.peaks)
+
+    with patch("hplc.models.signal.detect_peaks", return_value=stubs):
+        result = sig_with_existing_peak.detect_peaks(DETECT_WINDOWS)
+
+    assert isinstance(result, Signal2D)
+    assert result is not sig_with_existing_peak
+
+    # The peaks already on the signal survive, and the detected ones follow.
+    assert len(result.peaks) == len(existing) + len(stubs)
+    assert result.peaks[-len(stubs):] == stubs
+
+    # The original keeps only the peak it started with.
+    assert sig_with_existing_peak.peaks == existing

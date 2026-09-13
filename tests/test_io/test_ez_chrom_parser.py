@@ -33,7 +33,7 @@ def test_parse_ezchrom_returns_chromatogram_object(ezchrom_chromatogram):
 def test_parse_ezchrom_extract_relevant_chromatogram_metadata(ezchrom_chromatogram):
     extra_data = ezchrom_chromatogram.additional_data
 
-    assert ezchrom_chromatogram.filename == "example_ez_chrom_chromatogram.dat"
+    assert ezchrom_chromatogram.filename == extra_data["sample_name"] #"example_ez_chrom_chromatogram.dat"
 
     assert extra_data["sample_name"] == "NaCl_0.2mM"
 
@@ -48,7 +48,6 @@ def test_parse_ezchrom_extracts_relevant_signals(ezchrom_chromatogram):
     signals = ezchrom_chromatogram.signals
     for signal in signals.values():
         assert isinstance(signal, Signal2D)
-    assert ezchrom_chromatogram.filename == "example_ez_chrom_chromatogram.dat"
     assert signals.keys() == EXPECTED_SIGNALS
 
 @pytest.mark.parametrize("detector_name, expected_unit", [

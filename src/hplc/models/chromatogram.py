@@ -32,13 +32,51 @@ class Chromatogram:
     def _copy(self) -> Chromatogram:
         return copy.deepcopy(self)
 
-    def detect_peaks(self) -> Chromatogram:
+    def detect_peaks(self, peak_retention_times: list[tuple[float, float]]) -> Chromatogram:
+        """Detect peaks on every 2D signal, using the same retention-time windows.
+
+        3D signals have no peak concept yet and are left untouched.
+        """
         result = self._copy()
         for name, sig in list(result.signals.items()):
-            # 3D signals have no peak concept yet — leave them untouched.
             if isinstance(sig, Signal2D):
-                result.signals[name] = sig.detect_peaks()
+                result.signals[name] = sig.detect_peaks(peak_retention_times)
         return result
+
+    def compute_baseline(self, **kwargs) -> Chromatogram:
+        """Estimate a baseline for every 2D signal.
+
+        Keyword arguments pass straight through to each signal. 3D signals
+        have no baseline concept yet and are left untouched.
+        """
+        result = self._copy()
+        for name, sig in list(result.signals.items()):
+            if isinstance(sig, Signal2D):
+                result.signals[name] = sig.compute_baseline(**kwargs)
+        return result
+
+    def define_peak_by_bounds(self, start_time: float, end_time: float) -> Chromatogram:
+        """Define a peak manually on every 2D signal, from its integration bounds.
+
+        Bounds are in each signal's time unit. 3D signals have no peak concept
+        yet and are left untouched.
+        """
+        result = self._copy()
+        for name, sig in list(result.signals.items()):
+            if isinstance(sig, Signal2D):
+                result.signals[name] = sig.define_peak_by_bounds(start_time, end_time)
+        return result
+
+    def export_peaks(self) -> dict[str, list[dict]]:
+        """Peaks per 2D signal, keyed by detector name.
+
+        3D signals have no peak concept yet and are omitted.
+        """
+        return {
+            name: sig.export_peaks()
+            for name, sig in self.signals.items()
+            if isinstance(sig, Signal2D)
+        }
 
     def to_graph_properties(
         self,

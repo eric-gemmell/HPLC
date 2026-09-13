@@ -26,6 +26,15 @@ class Peak():
     def _copy(self) -> Peak:
         return copy.deepcopy(self)
 
+    def export(self) -> dict:
+        return {
+            "retention_time": self.retention_time,
+            "area": self.area,
+            "start_time": self.start_time,
+            "end_time": self.end_time,
+            "compound": self.compound,
+        }
+
 
 class Peak2D(Peak):
     def __init__(

@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from hplc.models.peak import Peak2D, AreaPeak2D, MathPeak2D
+from hplc.models.peak import Peak, Peak2D, AreaPeak2D, MathPeak2D
 from hplc.graphing.graph_models import FillRegion
 from hplc.testing.mock_generators import make_raw_signal, expected_peak_properties
 
@@ -195,3 +195,46 @@ def test_math_peak_recalculate_ignores_signal():
     peak.recalculate(signal=np.zeros_like(TIME), baseline=NEW_BACKGROUND)
     fill = peak.to_fill_region()
     np.testing.assert_array_equal(fill.upper, SIGNAL[MASK] + NEW_EXPECTED_BACKGROUND)
+
+# ---------------------------------------------------------------------------
+# Export
+# ---------------------------------------------------------------------------
+
+EXPORT_KEYS = {"retention_time", "area", "start_time", "end_time", "compound"}
+
+
+def test_peak_export_returns_all_properties():
+    peak = Peak(
+        start_time=10.0,
+        end_time=25.0,
+        retention_time=17.5,
+        area=1234.5,
+        compound="glucose",
+    )
+    exported = peak.export()
+
+    assert set(exported) == EXPORT_KEYS
+    assert exported["start_time"] == 10.0
+    assert exported["end_time"] == 25.0
+    assert exported["retention_time"] == 17.5
+    assert exported["area"] == 1234.5
+    assert exported["compound"] == "glucose"
+
+
+def test_peak_export_defaults_compound_to_none():
+    peak = Peak(start_time=10.0, end_time=25.0)
+    exported = peak.export()
+
+    assert set(exported) == EXPORT_KEYS
+    assert exported["compound"] is None
+
+
+def test_area_peak_export_uses_derived_properties():
+    exported = AREA_PEAK.export()
+
+    assert set(exported) == EXPORT_KEYS
+    assert exported["start_time"] == pytest.approx(PROPS["start_time"])
+    assert exported["end_time"] == pytest.approx(PROPS["end_time"])
+    assert exported["area"] == pytest.approx(EMPIRICAL_AREA, rel=1e-6)
+    assert exported["retention_time"] == pytest.approx(EMPIRICAL_RETENTION_TIME, rel=1e-6)
+    assert exported["compound"] is None

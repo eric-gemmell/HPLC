@@ -157,13 +157,13 @@ def test_display_stacked_raises_when_no_2d_signals(chrom_3d):
 # ---------------------------------------------------------------------------
 
 def test_detect_peaks_skips_3d_signals(chrom_mixed):
-    result = chrom_mixed.detect_peaks()
+    result = chrom_mixed.detect_peaks([])
     assert isinstance(result, Chromatogram)
     assert isinstance(result.signals["PDA"], Signal3D)
 
 
 def test_detect_peaks_still_processes_2d_signals(chrom_mixed):
-    result = chrom_mixed.detect_peaks()
+    result = chrom_mixed.detect_peaks([])
     assert isinstance(result.signals["RID"], Signal2D)
 
 
