@@ -12,6 +12,9 @@ from hplc.io.agilent_aia_parser import parse_agilent_aia_data_file, is_agilent_a
 # .lcd format — Shimadzu LabSolutions
 from hplc.io.shimadzu_parser import parse_shimadzu, is_shimadzu_file
 
+# .txt format — Shimadzu LabSolutions ASCII export
+from hplc.io.shimadzu_txt_parser import parse_shimadzu_txt, is_shimadzu_txt_file
+
 __all__ = [
     "load",
     "parse_ezchrom",
@@ -24,4 +27,6 @@ __all__ = [
     "is_agilent_aia_chromatogram",
     "parse_shimadzu",
     "is_shimadzu_file",
+    "parse_shimadzu_txt",
+    "is_shimadzu_txt_file",
 ]
