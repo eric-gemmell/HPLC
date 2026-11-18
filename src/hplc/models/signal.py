@@ -155,6 +155,49 @@ class Signal2D(Signal):
         result._peaks_detected = True
         return result
 
+    def define_peak_by_bounds_trap(self, start_time: float, end_time: float) -> Signal2D:
+        """Define a peak between two times, integrated above a straight-line baseline.
+
+        The baseline is drawn on the raw signal between the first and last
+        samples inside [start_time, end_time] (a valley-to-valley drop line),
+        so the area is the trapezoid-corrected area of the peak. The line
+        belongs only to this peak; the signal's own baseline is left as is.
+        """
+        if end_time <= start_time:
+            raise ValueError(
+                f"end_time ({end_time}) must be greater than start_time ({start_time})"
+            )
+        inside = np.flatnonzero((self.time >= start_time) & (self.time <= end_time))
+        if inside.size < 2:
+            raise ValueError(
+                f"Need at least two data points between {start_time} and {end_time} "
+                f"{self.time_unit}; signal spans {self.time[0]:g}-{self.time[-1]:g} "
+                f"{self.time_unit}"
+            )
+
+        first, last = inside[0], inside[-1]
+        # Outside the window the baseline equals the signal, so it contributes nothing.
+        line = self.signal.copy()
+        line[first:last + 1] = np.interp(
+            self.time[first:last + 1],
+            [self.time[first], self.time[last]],
+            [self.signal[first], self.signal[last]],
+        )
+
+        result = self._copy()
+        result.peaks = [
+            *result.peaks,
+            AreaPeak2D(
+                start_time=start_time,
+                end_time=end_time,
+                time=result.time,
+                signal=result.signal,
+                baseline=line,
+            ),
+        ]
+        result._peaks_detected = True
+        return result
+
     def export_peaks(self) -> list[dict]:
         """Every peak on this signal as a list of plain dicts."""
         return [peak.export() for peak in self.peaks]

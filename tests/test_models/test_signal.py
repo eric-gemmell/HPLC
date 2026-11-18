@@ -307,6 +307,58 @@ def test_define_peak_by_bounds(manual_sig: Signal2D):
     np.testing.assert_array_equal(fill.upper, MANUAL_SIGNAL[mask])
     np.testing.assert_array_equal(fill.lower, MANUAL_BASELINE[mask])
 
+TRAP_PEAK = {"mu": 200, "amplitude": 100, "sigma": 12, "alpha": 0.0}
+
+TRAP_TIME, TRAP_PEAK_SIGNAL = make_raw_signal(
+    [TRAP_PEAK], duration=400, dt=0.1, noise_scale=0.0
+)
+ROLLING_BASELINE_PEAK_DEF = {"mu": 100, "amplitude": 300, "sigma": 100, "alpha": 0.0}
+
+_, TRAP_BASELINE = make_raw_signal(
+    [ROLLING_BASELINE_PEAK_DEF], duration=400, dt=0.1, noise_scale=0.0
+)
+TRAP_SIGNAL = TRAP_PEAK_SIGNAL + TRAP_BASELINE
+
+TRAP_PROPS = expected_peak_properties([TRAP_PEAK])[0]
+TRAP_START = TRAP_PROPS["start_time"]
+TRAP_END = TRAP_PROPS["end_time"]
+
+@pytest.fixture
+def trap_sig():
+    return Signal2D(
+        filename="test_signal",
+        detector_name="UV",
+        time=TRAP_TIME,
+        time_unit="s",
+        signal=TRAP_SIGNAL,
+        signal_unit="mAU",
+    )
+
+def test_define_peak_by_bounds_trap(trap_sig: Signal2D):
+    start_index = next(x for x, val in enumerate(trap_sig.time) if val >= TRAP_START)
+    end_index = next(x for x, val in enumerate(trap_sig.time) if val > TRAP_END) -1
+
+    start_signal = trap_sig.signal[start_index]
+    end_signal = trap_sig.signal[end_index]
+
+    baseline = trap_sig._copy().signal
+    for i in range(start_index,end_index+1):
+        baseline[i] = start_signal*(1-(i-start_index)/(end_index-start_index)) + end_signal*((i-start_index)/(end_index-start_index))
+
+    result = trap_sig.define_peak_by_bounds_trap(TRAP_START, TRAP_END)
+
+    assert isinstance(result, Signal2D)
+    assert len(result.peaks) == 1
+    peak = result.peaks[0]
+
+    # Bounds are exactly what was supplied, in the signal's time unit.
+    assert peak.start_time == pytest.approx(TRAP_START)
+    assert peak.end_time == pytest.approx(TRAP_END)
+
+    assert peak.area == pytest.approx(TRAP_PROPS["area"], rel=0.01)
+    assert peak.baseline[start_index:end_index] == pytest.approx(baseline[start_index:end_index])
+
+
 
 # ---------------------------------------------------------------------------
 # Exporting peaks
